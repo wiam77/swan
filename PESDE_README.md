@@ -1,19 +1,19 @@
-# r
-`r` is a simple reactive library for Luau, inspired by [Vide](https://centau.github.io/vide)'s sources and effects system.
+# rl
+`rl` is a simple reactive library for Luau, inspired by [Vide](https://centau.github.io/vide)'s sources and effects system.
 
 # API Reference
-You can read `r`'s API reference [here](https://pesde.dev/packages/wiam/rl/latest/any/docs/api_ref).
+You can read `rl`'s API reference [here](https://pesde.dev/packages/wiam/rl/latest/any/docs/api_ref).
 
 # Demo
 ```luau
 --!strict
 
-local r = require("./src")
-local v = r.v
-local e = r.e
+local rl = require("path/to/rl")
+local s = rl.s
+local e = rl.e
 
-local name = v("john", true)
-local login_year = v(2020)
+local name = s("john", true)
+local login_year = s(2020)
 
 local login_d = e(function(last_login : number)
 	print(`{name.value}, it's been {login_year() - (last_login or 0)} years!`)
@@ -35,5 +35,5 @@ name("jane") -- "hey jane, your name has been changed to jane" - this one is for
 login_d()
 login_year(2026) -- doesn't print because the effect was disconnected
 
-r.d() -- disconnect all effects
+rl.d() -- disconnect all effects
 ```
