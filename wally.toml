@@ -1,0 +1,9 @@
+[package]
+name = "wiam/rl"
+description = "Simple reactive library for Luau."
+version = "0.1.0"
+license = "GPL-3.0-or-later"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+include = ["src", "src/*", "wally.toml", "COPYING", "README.md", "default.project.json"]
+exclude = ["**"]

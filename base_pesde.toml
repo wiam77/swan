@@ -1,0 +1,10 @@
+name = "wiam/rl"
+version = "0.1.4"
+description = "Simple reactive library for Luau."
+authors = ["wiam"]
+repository = "https://codeberg.org/wiam/rl"
+license = "GPL-3.0-or-later"
+includes = ["src/*", "pesde.toml", "COPYING", "README.md", "docs/*"]
+
+[indices]
+default = "https://github.com/pesde-pkg/index"
