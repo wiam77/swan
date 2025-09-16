@@ -1,1 +1,3 @@
-pesde run build && pesde update && pesde publish -y
+#!/bin/sh
+ 
+pesde run build && pesde update && pesde publish -y && wally publish
