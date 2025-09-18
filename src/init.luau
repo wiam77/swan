@@ -20,7 +20,7 @@ end
 --[=[
 	Disconnects all Effects.
 ]=]
-function rl.d() : ()
+function rl.cleanup() : ()
 	for i, v in connections do
 		table.clear(v)
 	end
@@ -35,7 +35,7 @@ end
 	@param force boolean? -- Whether Effects connected to this State will trigger, despite the fact that the value didn't change.
 	@return state<T> -- State. Call with no arguments for reading with tracking, call with arguments for writing (2nd argument is for forcing), read .value field for reading without tracking.
 ]=]
-function rl.s<T>(initial_value : T, force : boolean?) : state<T>
+function rl.state<T>(initial_value : T, force : boolean?) : state<T>
 	local children = {}
 	table.insert(connections, children)
 	local connections_i = #connections
@@ -78,7 +78,7 @@ end
 	@param callback callback -- The function to be bound.
 	@return disconnect () -> () -- Function which disconnects the Effect from the States.
 ]=]
-function rl.e(callback : callback) : () -> ()
+function rl.effect(callback : callback) : () -> ()
 	if current_effect then
 		print("[WARNING]: Nested effect")
 	end
@@ -119,7 +119,7 @@ end
 	Pass a condition to be checked, and after it a function to be run if it's successful.
 	The last value, if a function, and if not after a condition, will be threated as the "else" branch.
 ]=]
-function rl.b(...) : ()
+function rl.branch(...) : ()
 	local args = table.pack(...)
 	local n = args.n
 	assert(n >= 2, "Expected 2 or more arguments!")
@@ -146,13 +146,13 @@ end
 	@return t {[K] : V} -- The same table.
 	@return disconnect_all () -> () -- Function which disconnects and eliminates each disconnect function of the created Effects.
 ]=]
-function rl.t<K, V>(t : {[K] : V}) : ({[K] : V}, () -> ())
+function rl.mirror<K, V>(t : {[K] : V}) : ({[K] : V}, () -> ())
 	local disconnects : {[number | string] : () -> ()} = {}
 
 	for k, v in t do
 		local v_type = type(v)
 		if v_type == "function" or (v_type == "table" and (v :: {[any] : any}).value) then
-			local disconnect = rl.e(function()
+			local disconnect = rl.effect(function()
 				t[k] = v()
 			end)
 
