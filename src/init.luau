@@ -35,7 +35,7 @@ end
 	@param force boolean? -- Whether Effects connected to this State will trigger, despite the fact that the value didn't change.
 	@return state<T> -- State. Call with no arguments for reading with tracking, call with arguments for writing (2nd argument is for forcing), read .value field for reading without tracking.
 ]=]
-function rl.state<T>(initial_value : T, force : boolean?) : state<T>
+function rl.state<T>(initial_value : T?, force : boolean?) : state<T>
 	local children = {}
 	table.insert(connections, children)
 	local connections_i = #connections
@@ -75,7 +75,7 @@ end
 --[=[
 	Creates an Effect, a binding of the given function to the event of States read (by calling) within it being updated.
 	
-	@param callback callback -- The function to be bound.
+	@param callback callback<T> -- The function to be bound.
 	@return disconnect () -> () -- Function which disconnects the Effect from the States.
 ]=]
 function rl.effect<T>(callback : callback<T>) : () -> ()
@@ -106,6 +106,46 @@ function rl.effect<T>(callback : callback<T>) : () -> ()
 
 		self = nil
 	end
+end
+
+--[=[
+	Returns a function which calls the given functions.
+	Any non-function or function which precedes a "true" value by 2 indices is going to be skipped (the second happens because of derives).
+	This is intended to be used for disconnecting Effects in bulk.
+
+	@param ... () -> () -- The functions.
+	@return f () -> () -- The function caller.
+]=]
+function rl.scope<T>(... : T) : () -> ()
+	local t = {...}
+	return function()
+		for i = 1, #t do
+			local v = t[i]
+			if type(v) ~= "function" or t[i + 2] == true then continue end
+			v()
+		end
+	end
+end
+
+--[=[
+	Wraps an Effect around the given callback which sets a newly created State's value
+	to be the return value of the callback.
+	Returns the created State, the Effect's disconnect function and a flag which can be ignored.
+
+	This is useful for States which depend on the value of another State, since their value will
+	be updated only when the State they depend on is also updated, and not every time it is read,
+	as how would happen with a function which's return value depends on a State.
+
+	@param callback () -> U -- the callback
+	@return derived_state state<U> -- the State that was created
+	@return disconnect () -> -- the created Effect's disconnect function
+	@return flag true -- a flag used internally by rl.scope(); can be ignored.
+]=]
+function rl.derive<T, U>(callback : () -> U) : (state<U>, () -> (), true)
+	local cache = rl.state()
+	return cache, rl.effect(function()
+		cache(callback())
+	end), true
 end
 
 local function check<T>(v : T) : T

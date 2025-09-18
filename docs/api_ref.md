@@ -22,11 +22,46 @@ type callback<T> = (old_value : T, state_i : number?) -> any
 Creates a new [state](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#state), with the given initial value, and whether to always [force](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#forcing), and returns it.
 
 ```luau
-function state<T>(initial_value : T, force : boolean?) : state<T>
+function state<T>(initial_value : T?, force : boolean?) : state<T>
 
 -- Example
 local health = s(100)
 local stamina = s(100, true)
+```
+
+### derive
+Wraps an Effect around the given callback which sets a newly created State's value
+to be the return value of the callback.
+Returns the created State, the Effect's disconnect function and a flag which can be ignored.
+
+This is useful for States which depend on the value of another State, since their value will
+be updated only when the State they depend on is also updated, and not every time it is read,
+as how would happen with a function which's return value depends on a State.
+
+```luau
+function derive<T, U>(callback : () -> U) : (state<U>, () -> (), true)
+
+-- Example
+-- without derive() (normal function)
+local half_health = function()
+	print("some computation")
+	return health() / 2
+end
+
+print(half_health()) -- "some computation" 50
+print(half_health()) -- "some computation" 50
+health(50)
+print(half_health()) -- "some computation" 25
+print(half_health()) -- "some computation" 25
+
+-- with derive()
+local derive_half_health = derive(half_health) -- "some computation" 50
+
+print(half_health()) -- 50
+print(half_health()) -- 50
+health(50) -- "some computation" 25
+print(half_health()) -- 25
+print(half_health()) -- 25
 ```
 
 ### effect
@@ -53,6 +88,44 @@ stamina(90) -- "new stamina: 90"; this prints because `stamina` is always forced
 disconnect()
 
 stamina(40) -- doesn't print because we disconnected the effect.
+```
+
+### scope
+Returns a function which calls the given functions.
+Any non-function or function which precedes a "true" value by 2 indices is going to be skipped (the second happens because of derives).
+This is intended to be used for disconnecting Effects in bulk.
+
+```luau
+function scope<T>(... : T) : () -> ()
+
+-- Example
+-- without scope
+local disconnect_health = effect(function()
+	print(`your health is : {health()}`)
+end)
+
+local disconnect_stamina = effect(function()
+	print(`your stamina is : {stamina()}`)
+end)
+
+-- ...
+
+disconnect_health()
+disconnect_stamina()
+
+-- with scope
+local vitals_scope = scope(
+	effect(function()
+		print(`your health is : {health()}`)
+	end),
+	effect(function()
+		print(`your stamina is : {stamina()}`)
+	end)
+)
+
+-- ...
+
+vitals_scope()
 ```
 
 ### branch
