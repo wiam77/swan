@@ -14,7 +14,7 @@ Function which gets called when its [effect](https://pesde.dev/packages/wiam/rl/
 Takes the previous value of the state which triggered the effect, as well as its "index", determined by the order in which it appears within the function.
 
 ```luau
-type callback = (old_value : any, state_i : number?) -> any
+type callback<T> = (old_value : T, state_i : number?) -> any
 ```
 
 ## Functions
@@ -33,7 +33,7 @@ local stamina = s(100, true)
 Creates a new [effect](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#effect), with the given [callback](https://pesde.dev/packages/wiam/rl/latest/any/docs/api_ref#callback) function, and returns its disconnect function.
 
 ```luau
-function effect(callback : callback) : () -> ()
+function effect<T>(callback : callback<T>) : () -> ()
 
 -- Example
 effect(function()
@@ -83,7 +83,7 @@ The created effects' disconnect functions are put at t\["disconnect"..k], where 
 Returns the given table, as well as a function which disconnects all created effects.
 
 ```luau
-function rl.mirror<K, V>(t : {[K] : V}) : ({[K] : V}, () -> ())
+function mirror<K, V>(t : {[K] : V}) : ({[K] : V}, () -> ())
 
 -- Example
 local name = state("john")

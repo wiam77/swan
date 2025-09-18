@@ -7,11 +7,11 @@ export type state<T> = (() -> T) & ((new_value : T, force : boolean?) -> T) & {
 	value : T
 }
 
-export type callback = (old_value : any, state_i : number?) -> any
-type effect = {owners : {number}, callback : callback}
+export type callback<T> = (old_value : T, state_i : number?) -> any
+type effect<T> = {owners : {number}, callback : callback<T>}
 
-local current_effect : effect? = nil
-local connections : {{callback}} = {}
+local current_effect : effect<unknown>? = nil
+local connections : {{callback<unknown>}} = {}
 
 local function newindex_err()
 	error("Cannot mutate a State by editing it's .value!")
@@ -78,12 +78,12 @@ end
 	@param callback callback -- The function to be bound.
 	@return disconnect () -> () -- Function which disconnects the Effect from the States.
 ]=]
-function rl.effect(callback : callback) : () -> ()
+function rl.effect<T>(callback : callback<T>) : () -> ()
 	if current_effect then
 		print("[WARNING]: Nested effect")
 	end
 
-	local self : effect? = {callback = callback, owners = {}, children_disconnect = {}}
+	local self : effect<unknown>? = {callback = callback, owners = {}, children_disconnect = {}}
 	current_effect = self
 	callback()
 	current_effect = nil
