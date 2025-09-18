@@ -9,8 +9,8 @@ You can read `rl`'s API reference [here](https://pesde.dev/packages/wiam/rl/late
 --!strict
 
 local rl = require("path/to/rl")
-local s = rl.s
-local e = rl.e
+local s = rl.state
+local e = rl.effect
 
 local name = s("john", true)
 local login_year = s(2020)
@@ -35,5 +35,5 @@ name("jane") -- "hey jane, your name has been changed to jane" - this one is for
 login_d()
 login_year(2026) -- doesn't print because the effect was disconnected
 
-rl.d() -- disconnect all effects
+rl.cleanup() -- disconnect all effects
 ```
