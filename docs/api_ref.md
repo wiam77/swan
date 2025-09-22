@@ -22,7 +22,7 @@ type callback<T> = (old_value : T, state_i : number?) -> any
 Creates a new [state](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#state), with the given initial value, and whether to always [force](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#forcing), and returns it.
 
 ```luau
-function state<T>(initial_value : T?, force : boolean?) : state<T>
+function state<T>(value : T?, force : boolean?) : state<T>
 
 -- Example
 local health = s(100)

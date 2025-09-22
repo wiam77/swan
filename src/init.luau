@@ -1,5 +1,4 @@
 --!strict
--- TODO: Make rl.t more intuitive.
 
 local rl = {}
 
@@ -8,41 +7,40 @@ export type state<T> = (() -> T) & ((new_value : T, force : boolean?) -> T) & {
 }
 
 export type callback<T> = (old_value : T, state_i : number?) -> any
-type effect<T> = {owners : {number}, callback : callback<T>}
 
-local current_effect : effect<unknown>? = nil
-local connections : {{callback<unknown>}} = {}
+local current_callback : callback<unknown>? = nil
+local effects : {[callback<unknown>] : {state<unknown>}} = {}
 
 local function newindex_err()
 	error("Cannot mutate a State by editing it's .value!")
+end
+
+local warn = warn or function(msg : string) : ()
+	print(`\x1b[33m{msg}\x1b[0m`)
 end
 
 --[=[
 	Disconnects all Effects.
 ]=]
 function rl.cleanup() : ()
-	for i, v in connections do
-		table.clear(v)
+	for _, states in effects do
+		table.clear(states :: {any})
 	end
 
-	table.clear(connections)
+	table.clear(effects)
 end
 
 --[=[
 	Creates a State.
 	
-	@param initial_value T -- Initial value.
+	@param value T -- Initial value.
 	@param force boolean? -- Whether Effects connected to this State will trigger, despite the fact that the value didn't change.
 	@return state<T> -- State. Call with no arguments for reading with tracking, call with arguments for writing (2nd argument is for forcing), read .value field for reading without tracking.
 ]=]
-function rl.state<T>(initial_value : T?, force : boolean?) : state<T>
-	local children = {}
-	table.insert(connections, children)
-	local connections_i = #connections
-
-	local value = initial_value
-	local proxy = newproxy(true)
-	local mt = getmetatable(proxy)
+function rl.state<T>(value : T?, force : boolean?) : state<T>
+	local callbacks : {[callback<unknown>] : number} = {}
+	local self = newproxy(true)
+	local mt = getmetatable(self)
 	mt.__newindex = newindex_err
 	mt.__index = function(_, k)
 		assert(k == "value", `Expected key 'value', got '{k}'!`)
@@ -55,21 +53,23 @@ function rl.state<T>(initial_value : T?, force : boolean?) : state<T>
 		local new_value = argv[2]
 
 		if #argv == 1 then
-			if current_effect then
-				if current_effect.owners[connections_i] then return value end
-			
-				current_effect.owners[connections_i] = #children + 1
-				table.insert(children, current_effect.callback)
+			local current_callback_states = effects[current_callback :: callback<unknown>]
+			if current_callback and not callbacks[current_callback] then
+				table.insert(effects[current_callback] :: {any}, self)
+				callbacks[current_callback] = #current_callback_states
 			end
 		elseif value :: any ~= new_value or force == true or argv[3] == true then
 			value = new_value
-			for _, e in children do e(old_value, connections_i) end
+
+			for callback, state_i in callbacks do
+				callback(old_value, state_i)
+			end
 		end
 
 		return value
 	end
 
-	return proxy
+	return self
 end
 
 --[=[
@@ -79,32 +79,22 @@ end
 	@return disconnect () -> () -- Function which disconnects the Effect from the States.
 ]=]
 function rl.effect<T>(callback : callback<T>) : () -> ()
-	if current_effect then
-		print("[WARNING]: Nested effect")
+	if current_callback then
+		warn("Nested effect")
 	end
 
-	local self : effect<unknown>? = {callback = callback, owners = {}, children_disconnect = {}}
-	current_effect = self
+	effects[callback] = {}
+	current_callback = callback
 	callback()
-	current_effect = nil
+	current_callback = nil
 
 	return function()
-		if not self then
-			print("[INFO]: This effect is already disconnected!")
+		if not effects[callback] then
+			warn("This effect is already disconnected!")
 			return
 		end
 		
-		for connection_i, effect_i in self.owners do
-			local connection_t = connections[connection_i]
-			if not connection_t then
-				print("[INFO]: This effect is already disconnected!")
-				continue
-			end
-			
-			table.remove(connections[connection_i], effect_i)
-		end
-
-		self = nil
+		effects[callback] = nil
 	end
 end
 
@@ -166,7 +156,7 @@ function rl.branch(...) : ()
 
 	local i = 1
 	while i + 1 <= n do
-		if args[i] or current_effect then
+		if args[i] or current_callback then
 			check(args[i + 1])()
 		end
 
