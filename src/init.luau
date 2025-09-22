@@ -9,7 +9,7 @@ export type state<T> = (() -> T) & ((new_value : T, force : boolean?) -> T) & {
 export type callback<T> = (old_value : T, state_i : number?) -> any
 
 local current_callback : callback<unknown>? = nil
-local effects : {[callback<unknown>] : {state<unknown>}} = {}
+local effects : {[callback<unknown>] : number} = {}
 
 local function newindex_err()
 	error("Cannot mutate a State by editing it's .value!")
@@ -23,10 +23,6 @@ end
 	Disconnects all Effects.
 ]=]
 function rl.cleanup() : ()
-	for _, states in effects do
-		table.clear(states :: {any})
-	end
-
 	table.clear(effects)
 end
 
@@ -53,10 +49,9 @@ function rl.state<T>(value : T?, force : boolean?) : state<T>
 		local new_value = argv[2]
 
 		if #argv == 1 then
-			local current_callback_states = effects[current_callback :: callback<unknown>]
 			if current_callback and not callbacks[current_callback] then
-				table.insert(effects[current_callback] :: {any}, self)
-				callbacks[current_callback] = #current_callback_states
+				effects[current_callback] += 1
+				callbacks[current_callback] = effects[current_callback]
 			end
 		elseif value :: any ~= new_value or force == true or argv[3] == true then
 			value = new_value
@@ -83,7 +78,7 @@ function rl.effect<T>(callback : callback<T>) : () -> ()
 		warn("Nested effect")
 	end
 
-	effects[callback] = {}
+	effects[callback] = 0
 	current_callback = callback
 	callback()
 	current_callback = nil
