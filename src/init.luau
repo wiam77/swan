@@ -15,6 +15,12 @@ local function newindex_err()
 	error("Cannot mutate a State by editing it's .value!")
 end
 
+local function check<T>(v : T) : T
+	local vt = type(v)
+	assert(vt == "function", `Expected type 'function', got '{vt}'`)
+	return v
+end
+
 local warn = warn or function(msg : string) : ()
 	print(`\x1b[33m{msg}\x1b[0m`)
 end
@@ -131,12 +137,6 @@ function rl.derive<T, U>(callback : () -> U) : (state<U>, () -> (), true)
 	return cache, rl.effect(function()
 		cache(callback())
 	end), true
-end
-
-local function check<T>(v : T) : T
-	local vt = type(v)
-	assert(vt == "function", `Expected type 'function', got '{vt}'`)
-	return v
 end
 
 --[=[
