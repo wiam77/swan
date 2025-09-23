@@ -8,6 +8,10 @@ export type state<T> = (() -> T) & ((new_value : T, force : boolean?) -> T) & {
 
 export type callback<T> = (old_value : T, state_i : number?) -> any
 
+local batching = false
+-- {[state] : {{[callback] = true}, old_value, state_i}}
+local batched : {[state<unknown>] : {any}} = {}
+
 local current_callback : callback<unknown>? = nil
 local effects : {[callback<unknown>] : number} = {}
 
@@ -63,7 +67,20 @@ function rl.state<T>(value : T?, force : boolean?) : state<T>
 			value = new_value
 
 			for callback, state_i in callbacks do
-				callback(old_value, state_i)
+				if batching then
+					local state_batch = batched[self]
+					if state_batch then
+						if not state_batch[1][callback] then
+							state_batch[1][callback] = true
+						end
+
+						state_batch[2] = old_value
+					else
+						batched[self] = {{[callback] = true}, old_value, state_i}
+					end
+				else
+					callback(old_value, state_i)
+				end
 			end
 		end
 
@@ -71,6 +88,25 @@ function rl.state<T>(value : T?, force : boolean?) : state<T>
 	end
 
 	return self
+end
+
+--[=[
+	Batches any State write operation up until the function is done running.
+
+	@param f () -> any -- The function.
+]=]
+function rl.batch(f : () -> any) : ()
+	batching = true
+	f()
+
+	for _, result in batched do
+		for callback in result[1] do
+			callback(result[2], result[3])
+		end
+	end
+
+	batching = false
+	table.clear(batched :: {any})
 end
 
 --[=[

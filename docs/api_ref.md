@@ -25,8 +25,8 @@ Creates a new [state](https://pesde.dev/packages/wiam/rl/latest/any/docs/concept
 function state<T>(value : T?, force : boolean?) : state<T>
 
 -- Example
-local health = s(100)
-local stamina = s(100, true)
+local health = state(100)
+local stamina = state(100, true)
 ```
 
 ### derive
@@ -88,6 +88,23 @@ stamina(90) -- "new stamina: 90"; this prints because `stamina` is always forced
 disconnect()
 
 stamina(40) -- doesn't print because we disconnected the effect.
+```
+
+### batch
+Batches any State write operation up until the function is done running.
+
+```luau
+function batch(f : () -> any) : ()
+
+-- Example
+batch(function()
+	health(420)
+	health(1337, true)
+	health(69)
+end)
+
+-- "new health: 69"
+
 ```
 
 ### scope
