@@ -70,8 +70,9 @@ function rl.state<T>(value : T?, force : boolean?) : state<T>
 				if batching then
 					local state_batch = batched[self]
 					if state_batch then
-						if not state_batch[1][callback] then
-							state_batch[1][callback] = true
+						local x = state_batch[1]
+						if not x[callback] then
+							x[callback] = true
 						end
 
 						state_batch[2] = old_value
