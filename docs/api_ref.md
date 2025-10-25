@@ -55,13 +55,13 @@ print(half_health()) -- "some computation" 25
 print(half_health()) -- "some computation" 25
 
 -- with derive()
-local derive_half_health = derive(half_health) -- "some computation" 50
+local derive_half_health = derive(half_health) -- "some computation"
 
-print(half_health()) -- 50
-print(half_health()) -- 50
-health(50) -- "some computation" 25
-print(half_health()) -- 25
-print(half_health()) -- 25
+print(derive_half_health()) -- 25
+print(derive_half_health()) -- 25
+health(20) -- "some computation"
+print(derive_half_health()) -- 10
+print(derive_half_health()) -- 10
 ```
 
 ### effect
