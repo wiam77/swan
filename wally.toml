@@ -1,7 +1,7 @@
 [package]
 name = "wiam77/rl"
 description = "Simple reactive library for Luau. Docs: https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts"
-version = "0.1.10"
+version = "0.1.11"
 license = "GPL-3.0-or-later"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"

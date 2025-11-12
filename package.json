@@ -1,0 +1,16 @@
+{
+  "name": "@rbxts/rl",
+  "version": "0.1.11",
+  "description": "simple reactive library",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://codeberg.org/wiam/rl"
+  },
+  "license": "GPL-3.0-or-later",
+  "author": "wi_am",
+  "main": "src/init.luau",
+  "typings": "src/index.d.ts"
+}
