@@ -67,6 +67,11 @@ function rl.state<T>(value : T?, force : boolean?) : state<T>
 			value = new_value
 
 			for callback, state_i in callbacks do
+				if not effects[callback] then
+					callbacks[callback] = nil
+					continue
+				end
+
 				if batching then
 					local state_batch = batched[self]
 					if state_batch then
