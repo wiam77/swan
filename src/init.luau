@@ -171,7 +171,7 @@ end
 
 	@param callback () -> U -- the callback
 	@return derived_state state<U> -- the State that was created
-	@return disconnect () -> -- the created Effect's disconnect function
+	@return disconnect () -> () -- the created Effect's disconnect function
 	@return flag true -- a flag used internally by rl.scope(); can be ignored.
 ]=]
 function rl.derive<T, U>(callback : () -> U) : (state<U>, () -> (), true)
