@@ -10,7 +10,7 @@
 ## Wally
 Add the following to your `wally.toml`, in the `[dependencies]` section:
 ```toml
-rl = "wiam/rl@<version>"
+rl = "wiam77/rl@<version>"
 ```
 
 Then run:
