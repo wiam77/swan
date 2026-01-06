@@ -4,7 +4,7 @@ local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
 local TARGETS = {"luau", "lune", "roblox"}
-local INCLUDES = {"src", "COPYING", "PESDE_README.md", "docs"}
+local INCLUDES = {"src", "COPYING", "README.md", "docs"}
 
 local base_manifest = fs.readFile("base_pesde.toml")
 
@@ -19,7 +19,7 @@ for _, target in TARGETS do
 	fs.writeDir(out_dir)
 
 	for _, include in INCLUDES do
-		fs.copy(include, out_dir.."/"..if include == "PESDE_README.md" then "README.md" else include)
+		fs.copy(include, out_dir.."/"..include)
 	end
 
 	fs.writeFile(out_dir.."/pesde.toml", base_manifest.."\n"..serde.encode("toml", {target = {
