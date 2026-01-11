@@ -1,6 +1,6 @@
 {
   "name": "@rbxts/rl",
-  "version": "0.1.11",
+  "version": "0.1.13",
   "description": "simple reactive library",
   "publishConfig": {
     "access": "public"
