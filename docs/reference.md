@@ -1,7 +1,7 @@
 # rl API Reference
 ## Types
 ### state\<T>
-The [state](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#state) type.
+The [state](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#state) type.
 
 ```luau
 type state<T> = (() -> T) & ((value : T, force : boolean?) -> T) & {
@@ -10,7 +10,7 @@ type state<T> = (() -> T) & ((value : T, force : boolean?) -> T) & {
 ```
 
 ### callback
-Function which gets called when its [effect](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#effect) is triggered.
+Function which gets called when its [effect](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#effect) is triggered.
 Takes the previous value of the state which triggered the effect, as well as its "index", determined by the order in which it appears within the function.
 
 ```luau
@@ -19,7 +19,7 @@ type callback<T> = (old_value : T, state_i : number?) -> any
 
 ## Functions
 ### state
-Creates a new [state](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#state), with the given initial value, and whether to always [force](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#forcing), and returns it.
+Creates a new [state](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#state), with the given initial value, and whether to always [force](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#forcing), and returns it.
 
 ```luau
 function state<T>(value : T?, force : boolean?) : state<T>
@@ -65,7 +65,7 @@ print(derive_half_health()) -- 10
 ```
 
 ### effect
-Creates a new [effect](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#effect), with the given [callback](https://pesde.dev/packages/wiam/rl/latest/any/docs/api_ref#callback) function, and returns its disconnect function.
+Creates a new [effect](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#effect), with the given [callback](https://pesde.dev/packages/wiam/rl/latest/any/docs/reference#callback) function, and returns its disconnect function.
 
 ```luau
 function effect<T>(callback : callback<T>) : () -> ()
@@ -146,7 +146,7 @@ vitals_scope()
 ```
 
 ### branch
-Alternative `if`-like function to be used within effects. Learn more about it in the [tracking section of the Concepts page](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#tracking).
+Alternative `if`-like function to be used within effects. Learn more about it in the [tracking section of the intro page](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#tracking).
 Pass a condition to be checked, and after it a function to be run if it's successful.
 The last value, if a function, and if not after a condition, will be threated as the "else" branch.
 
@@ -191,7 +191,7 @@ print({data.username}) -- "joe"; didn't update because we disconnected the effec
 ```
 
 ### cleanup
-Disconnects all [effects](https://pesde.dev/packages/wiam/rl/latest/any/docs/concepts#effect).
+Disconnects all [effects](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#effect).
 
 ```luau
 function cleanup() : ()
