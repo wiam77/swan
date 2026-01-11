@@ -24,7 +24,6 @@ Creates a new [state](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#s
 ```luau
 function state<T>(value : T?, force : boolean?) : state<T>
 
--- Example
 local health = state(100)
 local stamina = state(100, true)
 ```
@@ -41,7 +40,6 @@ as how would happen with a function which's return value depends on a State.
 ```luau
 function derive<T, U>(callback : () -> U) : (state<U>, () -> (), true)
 
--- Example
 -- without derive() (normal function)
 local half_health = function()
 	print("some computation")
@@ -65,12 +63,11 @@ print(derive_half_health()) -- 10
 ```
 
 ### effect
-Creates a new [effect](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#effect), with the given [callback](https://pesde.dev/packages/wiam/rl/latest/any/docs/reference#callback) function, and returns its disconnect function.
+Creates a new [effect](https://pesde.dev/packages/wiam/rl/latest/any/docs/intro#effect), with the given [callback](https://pesde.dev/packages/wiam/rl/latest/any/docs/api_ref#callback) function, and returns its disconnect function.
 
 ```luau
 function effect<T>(callback : callback<T>) : () -> ()
 
--- Example
 effect(function()
 	print(`new health: {health()}`)
 end)
@@ -96,7 +93,6 @@ Batches any State write operation up until the function is done running.
 ```luau
 function batch(f : () -> any) : ()
 
--- Example
 batch(function()
 	health(420)
 	health(1337, true)
@@ -104,7 +100,6 @@ batch(function()
 end)
 
 -- "new health: 69"
-
 ```
 
 ### scope
@@ -115,7 +110,6 @@ This is intended to be used for disconnecting Effects in bulk.
 ```luau
 function scope<T>(... : T) : () -> ()
 
--- Example
 -- without scope
 local disconnect_health = effect(function()
 	print(`your health is : {health()}`)
@@ -153,7 +147,6 @@ The last value, if a function, and if not after a condition, will be threated as
 ```luau
 function branch(...) : ()
 
--- Example
 -- A single effect for the same functionality as the examples above, thanks to the use of state_i and the branching function.
 effect(function(_, state_i)
 	branch(
@@ -175,7 +168,6 @@ Returns the given table, as well as a function which disconnects all created eff
 ```luau
 function mirror<K, V>(t : {[K] : V}) : ({[K] : V}, () -> ())
 
--- Example
 local name = state("john")
 local data = mirror {
 	username = name,
@@ -196,7 +188,6 @@ Disconnects all [effects](https://pesde.dev/packages/wiam/rl/latest/any/docs/int
 ```luau
 function cleanup() : ()
 
--- Example
 cleanup()
 health(77) -- doesn't print because no effect is connected to this state (we just disconnected)
 ```
