@@ -209,14 +209,14 @@ function rl.branch(...) : ()
 	local i = 1
 	while i + 1 <= n do
 		if args[i] or current_callback then
-			check(args[i + 1])()
+			is_function(args[i + 1])()
 		end
 
 		i += 2
 	end
 
 	if i <= n then
-		check(args[i])()
+		is_function(args[i])()
 	end
 end
 
