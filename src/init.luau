@@ -1,4 +1,18 @@
 --!strict
+--[[
+TODO:
+	When creating a state, if its variable type is annotated,
+	and the type of the value passed to rl.state() doesn't match,
+	there should be a type error:
+	local health : rl.state<number> = rl.state("i'm not a number") -- doesn't error
+
+	When modifying a state, if the value passed to state() doesn't match its type,
+	there should be a type error:
+	local health : rl.state<number> = rl.state(100)
+	health("i'm not a number")
+
+	Re-write rl.mirror
+]]--
 
 local rl = {}
 
@@ -6,7 +20,8 @@ export type state<T> = (() -> T) & ((new_value : T, force : boolean?) -> T) & {
 	value : T
 }
 
-export type callback<T> = (old_value : T, state_i : number?) -> any
+export type callback<T> = ((old_value : T?, state_i : number?) -> unknown)
+			| ((old_value : T?, state_i : number?) -> ())
 
 local batching = false
 -- {[state] : {{[callback] = true}, old_value, state_i}}
@@ -63,7 +78,7 @@ function rl.state<T>(value : T?, force : boolean?) : state<T>
 				effects[current_callback] += 1
 				callbacks[current_callback] = effects[current_callback]
 			end
-		elseif value :: any ~= new_value or force == true or argv[3] == true then
+		elseif value ~= new_value or force == true or argv[3] == true then
 			value = new_value
 
 			for callback, state_i in callbacks do
@@ -101,18 +116,18 @@ end
 
 	@param f () -> any -- The function.
 ]=]
-function rl.batch(f : () -> any) : ()
+function rl.batch(f : (() -> any) | (() -> ())) : ()
 	batching = true
 	f()
 
 	for _, result in batched do
-		for callback in result[1] do
-			callback(result[2], result[3])
+		for callback in result[1] :: {[callback<unknown>] : true} do
+			callback(result[2], result[3] :: number)
 		end
 	end
 
 	batching = false
-	table.clear(batched :: {any})
+	table.clear(batched)
 end
 
 --[=[
@@ -155,7 +170,7 @@ function rl.scope<T>(... : T) : () -> ()
 		for i = 1, #t do
 			local v = t[i]
 			if type(v) ~= "function" or t[i + 2] == true then continue end
-			v()
+			(v :: () -> unknown)()
 		end
 	end
 end
@@ -202,45 +217,6 @@ function rl.branch(...) : ()
 
 	if i <= n then
 		check(args[i])()
-	end
-end
-
---[=[
-	Creates an effect for every function or State within the given table, which updates the key to either the return value of the function, or the value of the State.
-	Each Effect's disconnect function gets put in the table as t["disconnect_"..key], when key is a string, or as t["disconnect"_..i], where i is the numerical index at which the key was iterated over.
-
-	@param t {[K] : V} -- The table.
-	@return t {[K] : V} -- The same table.
-	@return disconnect_all () -> () -- Function which disconnects and eliminates each disconnect function of the created Effects.
-]=]
-function rl.mirror<K, V>(t : {[K] : V}) : ({[K] : V}, () -> ())
-	local disconnects : {[number | string] : () -> ()} = {}
-
-	for k, v in t do
-		local v_type = type(v)
-		if v_type == "function" or (v_type == "table" and (v :: {[any] : any}).value) then
-			local disconnect = rl.effect(function()
-				t[k] = v()
-			end)
-
-			local k_type = type(k)
-			if k_type == "string" then
-				disconnects[k] = disconnect
-			else
-				table.insert(disconnects :: {any}, disconnect)
-			end
-		end
-	end
-
-	for name, disconnect in disconnects do
-		t["disconnect_"..name] = disconnect
-	end
-
-	return t, function()
-		for name, disconnect in disconnects do
-			disconnect()
-			t["disconnect_"..name] = nil
-		end
 	end
 end
 

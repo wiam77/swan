@@ -14,7 +14,8 @@ Function which gets called when its [effect](https://pesde.dev/packages/wiam/rl/
 Takes the previous value of the state which triggered the effect, as well as its "index", determined by the order in which it appears within the function.
 
 ```luau
-type callback<T> = (old_value : T, state_i : number?) -> any
+type callback<T> = ((old_value : T?, state_i : number?) -> unknown)
+                   | ((old_value : T?, state_i : number?) -> ())
 ```
 
 ## Functions
@@ -91,7 +92,7 @@ stamina(40) -- doesn't print because we disconnected the effect.
 Batches any State write operation up until the function is done running.
 
 ```luau
-function batch(f : () -> any) : ()
+function batch(f : () -> any | (() -> ())) : ()
 
 batch(function()
 	health(420)
