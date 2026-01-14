@@ -34,7 +34,7 @@ local function newindex_err()
 	error("Cannot mutate a State by editing it's .value!")
 end
 
-local function check<T>(v : T) : T
+local function is_function<T>(v : T) : T
 	local vt = type(v)
 	assert(vt == "function", `Expected type 'function', got '{vt}'`)
 	return v
