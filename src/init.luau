@@ -16,8 +16,7 @@ TODO:
 
 local rl = {}
 
-export type callback<T = unknown> = ((old_value : T?, state_i : number?) -> unknown)
-				  | ((old_value : T?, state_i : number?) -> ())
+export type callback<T = unknown> = (old_value : T?, state_i : number?) -> ...unknown
 
 -- Currently broken, might get fixed in the future.
 -- export type state<T = unknown> = setmetatable<{
@@ -150,7 +149,7 @@ end
 	@return state<T> -- The State that was created.
 	@return () -> () -- The created Effect's disconnect function.
 ]=]
-function rl.derive<T>(callback : (() -> T) | (() -> ())) : (state<T>, () -> ())
+function rl.derive<T>(callback : () -> T) : (state<T>, () -> ())
 	local state = rl.state()
 	return state, rl.effect(function()
 		state(callback())
@@ -160,9 +159,9 @@ end
 --[=[
 	Batches any State write operation up until the given function is done running.
 
-	@param f (() -> unknown) | () -> () -- The function.
+	@param f () -> ...unknown -- The function.
 ]=]
-function rl.batch(f : (() -> unknown) | () -> ()) : ()
+function rl.batch(f : () -> ...unknown) : ()
 	batching = true
 	f()
 

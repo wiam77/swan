@@ -5,8 +5,7 @@ Function which gets called when its [effect](https://pesde.dev/packages/wiam/rl/
 Takes the previous value of the state which triggered the effect, as well as its "index", determined by the order in which it appears within the function.
 
 ```luau
-type callback<T = unknown> = ((old_value : T?, state_i : number?) -> unknown)
-													 | ((old_value : T?, state_i : number?) -> ())
+type callback<T = unknown> = (old_value : T?, state_i : number?) -> ...unknown
 ```
 
 ### state\<T>
@@ -67,7 +66,7 @@ be updated only when the State they depend on is also updated, and not every tim
 as how would happen with a function which's return value depends on a State.
 
 ```luau
-function derive<T>(callback : (() -> T) | (() -> ())) : (state<T>, () -> ())
+function derive<T>(callback : () -> T) : (state<T>, () -> ())
 
 -- without derive() (normal function)
 local half_health = function()
@@ -95,7 +94,7 @@ print(derive_half_health()) -- 10
 Batches any State write operation up until the function is done running.
 
 ```luau
-function batch(f : (() -> unknown) | () -> ()) : ()
+function batch(f : () -> ...unknown) : ()
 
 batch(function()
 	health(420)

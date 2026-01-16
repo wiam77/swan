@@ -1,7 +1,7 @@
 declare namespace rl {
   type callback<T = unknown> = (old_value?: T, state_i?: number) => unknown
 
-  export type state<T = unknown> = {
+  type state<T = unknown> = {
     (new_value: T, force?: boolean): T
     (): T
     value: T
@@ -46,9 +46,9 @@ declare namespace rl {
   /**
    * Batches any State write operation up until the function is done running.
    *
-   * @param f () => unknown -- The function.
+   * @param f () => unknown[] -- The function.
    */
-  function batch(f: () => unknown): void
+  function batch(f: () => unknown[]): void
 
   /**
    * Wraps the given callbacks into Effects.
@@ -69,10 +69,10 @@ declare namespace rl {
   function branch(...a: any): void
 
   /**
-   * Iterates over the given table and creates an Effect for each key that is
+   * Iterates over the given map and creates an Effect for each key that is
    * either a function or a State, updating the key's value to be the return value of the
    * function, or the State's value.
-   * Returns table containing each key's Effect's disconnect function.
+   * Returns a map containing each key's Effect's disconnect function.
    *
    * @param t T -- The table to iterate.
    * @return T -- The given table.
@@ -85,3 +85,5 @@ declare namespace rl {
    */
   function cleanup(): void
 }
+
+export = rl

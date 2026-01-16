@@ -1,6 +1,6 @@
 {
   "name": "@rbxts/rl",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Simple reactive library. Docs: https://pesde.dev/packages/wiam/rl/latest/any/docs/intro",
   "publishConfig": {
     "access": "public"
