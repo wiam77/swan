@@ -18,6 +18,11 @@ Then run:
 # wally install
 ```
 
+## npm
+```console
+# npm install @rbxts/rl
+```
+
 # API Reference
 You can read the API reference in `rl`'s [Pesde package page](https://pesde.dev/packages/wiam/rl/latest/any/docs/api_ref).
 

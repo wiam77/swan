@@ -1,5 +1,5 @@
 name = "wiam/rl"
-version = "0.1.13"
+version = "0.2.0"
 description = "Simple reactive library for Luau."
 authors = ["wiam"]
 repository = "https://codeberg.org/wiam/rl"

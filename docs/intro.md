@@ -11,10 +11,10 @@ Instead, `rl` solves this by providing the `branch` function, which works like s
 
 ## State
 A State is a container for a value.\
-Internally, it is an userdata that has a metatable with the `__index` and `__newindex` metamethods, which permit reading and writing the value with special mechanisms.\
 Call it with no arguments for reading with tracking.\
 Call with arguments for writing, where the first argument is the new value, and the second one is whether to force for this specific call.\
-Access the `.value` field for reading without tracking. Note that this is read-only, and attempting to modify it will cause an error. `rawset` doesn't work either, since an userdata is not a table.
+Access the `.value` field for reading without tracking.
+Modify the `.value` field for writing without tracking.
 
 ## Forcing
 Forcing is when you write a new value to a State, and always trigger its Effects, even when the new value is the same as the old one.\

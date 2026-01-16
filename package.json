@@ -1,7 +1,7 @@
 {
   "name": "@rbxts/rl",
-  "version": "0.1.13",
-  "description": "simple reactive library",
+  "version": "0.2.0",
+  "description": "Simple reactive library. Docs: https://pesde.dev/packages/wiam/rl/latest/any/docs/intro",
   "publishConfig": {
     "access": "public"
   },
@@ -12,5 +12,11 @@
   "license": "GPL-3.0-or-later",
   "author": "wi_am",
   "main": "src/init.luau",
-  "typings": "src/index.d.ts"
+  "typings": "src/index.d.ts",
+  "files": [
+    "src/",
+    "docs/",
+    "COPYING",
+    "default.project.json"
+  ]
 }
