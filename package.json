@@ -16,7 +16,6 @@
   "files": [
     "src/",
     "docs/",
-    "COPYING",
     "default.project.json"
   ]
 }
