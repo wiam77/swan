@@ -4,7 +4,7 @@ local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
 local TARGETS = {"luau", "lune", "roblox"}
-local INCLUDES = {"src", "COPYING", "README.md", "docs"}
+local INCLUDES = {"src", "LICENSE", "README.md", "docs"}
 
 local base_manifest = fs.readFile("base_pesde.toml")
 

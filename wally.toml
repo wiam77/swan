@@ -5,5 +5,5 @@ version = "0.2.1"
 license = "GPL-3.0-or-later"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
-include = ["src", "src/*", "wally.toml", "COPYING", "README.md", "default.project.json"]
+include = ["src", "src/*", "docs", "docs/*", "wally.toml", "LICENSE", "README.md", "default.project.json"]
 exclude = ["**"]
