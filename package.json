@@ -1,6 +1,6 @@
 {
   "name": "@rbxts/swan",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple state management library. Docs: https://pesde.dev/packages/wiam/swan/latest/any/docs/intro",
   "publishConfig": {
     "access": "public"
