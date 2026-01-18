@@ -2,19 +2,19 @@
 --[[
 TODO:
 	When creating a State, if its variable type is annotated,
-	and the type of the value passed to rl.state() doesn't match,
+	and the type of the value passed to swan.state() doesn't match,
 	there should be a type error:
-	local health : rl.state<number> = rl.state("i'm not a number") -- doesn't error
+	local health : swan.state<number> = swan.state("i'm not a number") -- doesn't error
 
 	When modifying a State, if the value passed to state() doesn't match its type,
 	there should be a type error:
-	local health : rl.state<number> = rl.state(100)
+	local health : swan.state<number> = swan.state(100)
 	health("i'm not a number")
 
 	- The 2 bugs above could be fixed by using the commented out state<T> type.
 ]]--
 
-local rl = {}
+local swan = {}
 
 export type callback<T = unknown> = (old_value : T?, state_i : number?) -> ...unknown
 
@@ -100,7 +100,7 @@ end
 	read .value field for reading without tracking,
 	write .value field for writing without triggering Effects.
 ]=]
-function rl.state<T>(initial_value : T?, always_force : boolean?) : state<T>
+function swan.state<T>(initial_value : T?, always_force : boolean?) : state<T>
 	return setmetatable({
 		value = initial_value,
 		callbacks = {},
@@ -116,7 +116,7 @@ end
 	@param callback callback<T> -- The function to be bound.
 	@return () -> () -- Function which disconnects the Effect from the States.
 ]=]
-function rl.effect<T>(callback : callback<T>) : () -> ()
+function swan.effect<T>(callback : callback<T>) : () -> ()
 	if current_callback then
 		warn("Nested effect")
 	end
@@ -149,9 +149,9 @@ end
 	@return state<T> -- The State that was created.
 	@return () -> () -- The created Effect's disconnect function.
 ]=]
-function rl.derive<T>(callback : () -> T) : (state<T>, () -> ())
-	local state = rl.state()
-	return state, rl.effect(function()
+function swan.derive<T>(callback : () -> T) : (state<T>, () -> ())
+	local state = swan.state()
+	return state, swan.effect(function()
 		state(callback())
 	end)
 end
@@ -161,7 +161,7 @@ end
 
 	@param f () -> ...unknown -- The function.
 ]=]
-function rl.batch(f : () -> ...unknown) : ()
+function swan.batch(f : () -> ...unknown) : ()
 	batching = true
 	f()
 
@@ -182,10 +182,10 @@ end
 	@param ... () -> () -- The Callbacks.
 	@return () -> () -- The disconnecter.
 ]=]
-function rl.scope(... : callback) : () -> ()
+function swan.scope(... : callback) : () -> ()
 	local disconnects = {}
 	for _, callback in {...} do
-		table.insert(disconnects, rl.effect(callback))
+		table.insert(disconnects, swan.effect(callback))
 	end
 	
 	return function()
@@ -202,7 +202,7 @@ end
 
 	@param ... any -- The values and the branches.
 ]=]
-function rl.branch(... : any) : ()
+function swan.branch(... : any) : ()
 	local args = table.pack(...)
 	local n = args.n
 	assert(n > 1, "Expected at least 2 arguments!")
@@ -238,12 +238,12 @@ type identifier<T> = keyof<T> | indexer<T>
 	@return T -- The given table.
 	@return {[identifier<T>] : () -> ()} -- The table containing the disconnect functions.
 ]=]
-function rl.mirror<T>(t : T) : (T, {[identifier<T>] : () -> ()})
+function swan.mirror<T>(t : T) : (T, {[identifier<T>] : () -> ()})
 	local disconnects : {[identifier<T>] : () -> ()} = {}
 	for k, v in (t :: {[identifier<T>] : unknown}) do
 		local mt = getmetatable(v :: any)
 		if type(v) ~= "function" and not (mt and mt.__call == state__call) then continue end
-		disconnects[k] = rl.effect(function()
+		disconnects[k] = swan.effect(function()
 			(t :: {[identifier<T>] : unknown})[k] = (v :: () -> ())()
 		end)
 	end
@@ -254,8 +254,8 @@ end
 --[=[
 	Disconnects all Effects.
 ]=]
-function rl.cleanup() : ()
+function swan.cleanup() : ()
 	table.clear(effects)
 end
 
-return rl
+return swan

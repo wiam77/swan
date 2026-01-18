@@ -1,4 +1,4 @@
-declare namespace rl {
+declare namespace swan {
   type callback<T = unknown> = (old_value?: T, state_i?: number) => unknown
 
   type state<T = unknown> = {
@@ -86,4 +86,4 @@ declare namespace rl {
   function cleanup(): void
 }
 
-export = rl
+export = swan

@@ -1,8 +1,8 @@
-name = "wiam/rl"
-version = "0.2.1"
-description = "Simple reactive library for Luau."
+name = "wiam/swan"
+version = "0.1.0"
+description = "Simple state management library."
 authors = ["wiam"]
-repository = "https://codeberg.org/wiam/rl"
+repository = "https://codeberg.org/wiam/swan"
 license = "GPL-3.0-or-later"
 includes = ["src/*", "docs/*", "pesde.toml", "LICENSE", "README.md", "default.project.json"]
 

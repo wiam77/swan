@@ -1,13 +1,13 @@
-# rl concepts
+# concepts
 ## Effect
 An Effect is the binding of a function to an event triggered when States read (with tracking) within it are written.
 
 ## Tracking
-Tracking, or registering, is the process done internally by `rl` for assigning States to Effects, so that the latters' functions can be ran when the formers' values are written.\
+Tracking, or registering, is the process done internally by `swan` for assigning States to Effects, so that the latters' functions can be ran when the formers' values are written.\
 This works by calling an Effect's function once when created to check which States are read (with tracking) within it.\
 But this introduces a problem: when branching within the function, only the branch which satisfies the condition is going to be checked.\
 That could be solved by reading all the States that are going to be used before any branch, but it misses the point of the library.\
-Instead, `rl` solves this by providing the `branch` function, which works like standard branching, but runs all branches when it's doing the tracking process, so that all States are correctly assigned.
+Instead, `swan` solves this by providing the `branch` function, which works like standard branching, but runs all branches when it's doing the tracking process, so that all States are correctly assigned.
 
 ## State
 A State is a container for a value.\

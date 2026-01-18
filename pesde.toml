@@ -1,4 +1,4 @@
-name = "wiam/rl_root"
+name = "wiam/swan_root"
 version = "1.0.0"
 license = "GPL-3.0-or-later"
 workspace_members = ["build/*"]
