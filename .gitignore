@@ -1,7 +1,11 @@
-build
-Packages
+Packages/
+luau_packages/
+lune_packages/
+roblox_packages/
+build/
 sourcemap.json
 *.rbxm
 *.rbxmx
 *.rbxl
 *.rbxlx
+*.pesde
