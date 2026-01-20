@@ -22,7 +22,7 @@ for _, target in TARGETS do
 		fs.copy(include, out_dir.."/"..include)
 	end
 
-	fs.writeFile(out_dir.."/pesde.toml", BASE_MANIFEST.."\n\n"..serde.encode("toml", {target = {
+	fs.writeFile(out_dir.."/pesde.toml", BASE_MANIFEST..serde.encode("toml", {target = {
 		environment = target,
 		lib = "src/init.luau",
 		build_files = target == "roblox" and {"src"} or nil

@@ -8,3 +8,4 @@ includes = ["src/*", "docs/*", "pesde.toml", "LICENSE", "README.md", "CHANGELOG.
 
 [indices]
 default = "https://github.com/pesde-pkg/index"
+
