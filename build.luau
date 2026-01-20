@@ -6,7 +6,7 @@ local serde = require("@lune/serde")
 local TARGETS = {"luau", "lune", "roblox"}
 local INCLUDES = {"src", "LICENSE", "README.md", "docs"}
 
-local base_manifest = fs.readFile("base_pesde.toml")
+local BASE_MANIFEST = fs.readFile("base_pesde.toml")
 
 if fs.isDir("build") then
 	fs.removeDir("build")
@@ -22,9 +22,9 @@ for _, target in TARGETS do
 		fs.copy(include, out_dir.."/"..include)
 	end
 
-	fs.writeFile(out_dir.."/pesde.toml", base_manifest.."\n"..serde.encode("toml", {target = {
+	fs.writeFile(out_dir.."/pesde.toml", BASE_MANIFEST.."\n\n"..serde.encode("toml", {target = {
 		environment = target,
 		lib = "src/init.luau",
-		build_files = target == "roblox" and {"src"}
+		build_files = target == "roblox" and {"src"} or nil
 	}}, true))
 end
