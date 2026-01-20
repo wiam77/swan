@@ -13,6 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.1.0] - 2026-01-19
 Initial release.
 
-[Unreleased]: https://codeberg.org/wiam/swan/compare/v0.1.0...HEAD
+[Unreleased]: https://codeberg.org/wiam/swan/compare/v0.1.1...HEAD
 [v0.1.1]: https://codeberg.org/wiam/swan/compare/v0.1.0...HEAD
 [v0.1.0]: https://codeberg.org/wiam/swan/releases/tag/v0.1.0
