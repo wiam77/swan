@@ -4,7 +4,7 @@ description = "Simple state management library."
 authors = ["wiam"]
 repository = "https://codeberg.org/wiam/swan"
 license = "GPL-3.0-or-later"
-includes = ["src/*", "docs/*", "pesde.toml", "LICENSE", "README.md", "default.project.json"]
+includes = ["src/*", "docs/*", "pesde.toml", "LICENSE", "README.md"]
 
 [indices]
 default = "https://github.com/pesde-pkg/index"
