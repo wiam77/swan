@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.1.2] - 2026-01-21
+### Added
+- This changelog
+
+### Changed
+- Improved build script.
+- Include newline (\n) in base pesde manifest.
+- rl -> swan in Rojo project file.
+
+### Removed
+- Rojo project file in pesde manifest.
+
 ## [v0.1.1] - 2026-01-19
 ### Changed
 - Bumped the package version for an unpublished change which renamed the namespace in the TypeScript declaration file from `rl` (the project's previous name) to `swan`.
@@ -13,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.1.0] - 2026-01-19
 Initial release.
 
-[Unreleased]: https://codeberg.org/wiam/swan/compare/v0.1.1...HEAD
-[v0.1.1]: https://codeberg.org/wiam/swan/compare/v0.1.0...HEAD
+[Unreleased]: https://codeberg.org/wiam/swan/compare/v0.1.2...HEAD
+[v0.1.2]: https://codeberg.org/wiam/swan/compare/v0.1.1...v0.1.2
+[v0.1.1]: https://codeberg.org/wiam/swan/compare/v0.1.0...v0.1.1
 [v0.1.0]: https://codeberg.org/wiam/swan/releases/tag/v0.1.0
