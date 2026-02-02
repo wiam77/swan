@@ -12,21 +12,18 @@ TODO:
 	health("i'm not a number")
 
 	- The 2 bugs above could be fixed by using the commented out state<T> type.
-
-	The type of a variable holding a state should be inferred by its initial value's type:
-	local health = swan.state(100) -- health should be inferred as swan.state<number>
 ]]--
 
 local swan = {}
 local binary_ops = require("@self/binary_ops")
 
 export type callback<T = unknown> = (old_value : T?, state_i : number?) -> ...unknown
-export type state<T = unknown> = ({
+export type state<T = unknown> = {
 	value : T,
 	always_force : boolean,
 	read callbacks : {[callback<T>] : number}
 } & ( |	(() -> T)
-      |	((new_value : T?, force : boolean?) -> T)))
+      |	((new_value : T?, force : boolean?) -> T))
 
 local warn = warn or function(msg : string) : ()
 	print(`\x1b[33m{msg}\x1b[0m`)
