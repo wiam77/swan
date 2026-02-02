@@ -12,37 +12,30 @@ TODO:
 	health("i'm not a number")
 
 	- The 2 bugs above could be fixed by using the commented out state<T> type.
+
+	The type of a variable holding a state should be inferred by its initial value's type:
+	local health = swan.state(100) -- health should be inferred as swan.state<number>
 ]]--
 
 local swan = {}
+local binary_ops = require("@self/binary_ops")
 
 export type callback<T = unknown> = (old_value : T?, state_i : number?) -> ...unknown
-
--- Currently broken, might get fixed in the future.
--- export type state<T = unknown> = setmetatable<{
--- 	value : T,
--- 	read callbacks : {[callback<T>] : number},
--- 	read always_force : boolean
--- }, {
--- 	__call : (() -> T)
--- 	       & ((new_value : T?, force : boolean?) -> T)
--- }>
-
-export type state<T = unknown> = {
+export type state<T = unknown> = ({
 	value : T,
 	always_force : boolean,
 	read callbacks : {[callback<T>] : number}
 } & ( |	(() -> T)
-      |	((new_value : T?, force : boolean?) -> T))
+      |	((new_value : T?, force : boolean?) -> T)))
+
+local warn = warn or function(msg : string) : ()
+	print(`\x1b[33m{msg}\x1b[0m`)
+end
 
 local function is_function<T>(v : T) : T
 	local vt = type(v)
 	assert(vt == "function", `Expected type 'function', got '{vt}'`)
 	return v
-end
-
-local warn = warn or function(msg : string) : ()
-	print(`\x1b[33m{msg}\x1b[0m`)
 end
 
 local batching = false
@@ -51,10 +44,12 @@ local batched : {[state] : {any}} = {} -- {[state] : {[1] : {[callback] = true},
 local current_callback : callback? = nil
 local effects : {[callback] : number} = {}
 
-local function state__call<T>(self : state<T>, new_value : T?, force : boolean?) : T
+local state_mt = {}
+
+function state_mt.__call<T>(self : state<T>, new_value : T?, force : boolean?) : T
 	local old_value = self.value
 	local callbacks = self.callbacks
-	
+
 	if not (new_value or force) then
 		if current_callback and not callbacks[current_callback] then
 			effects[current_callback] += 1
@@ -88,26 +83,6 @@ local function state__call<T>(self : state<T>, new_value : T?, force : boolean?)
 	end
 
 	return self.value
-end
-
---[=[
-	Creates a State.
-	
-	@param initial_value T? -- The initial value for the State, can be nil.
-	@param always_force boolean? -- Whether Effects connected to this State will always trigger, even when the value didn't change.
-	@return state<T> -- The created State. Call with no arguments for reading with tracking,
-	call with arguments for writing (2nd argument is for forcing),
-	read .value field for reading without tracking,
-	write .value field for writing without triggering Effects.
-]=]
-function swan.state<T>(initial_value : T?, always_force : boolean?) : state<T>
-	return setmetatable({
-		value = initial_value,
-		callbacks = {},
-		always_force = always_force or false
-	}, {
-		__call = state__call
-	}) :: any
 end
 
 --[=[
@@ -149,11 +124,50 @@ end
 	@return state<T> -- The State that was created.
 	@return () -> () -- The created Effect's disconnect function.
 ]=]
-function swan.derive<T>(callback : () -> T) : (state<T>, () -> ())
+function swan.derive<T>(callback : (() -> T) | () -> ()) : (state<T>, () -> ())
 	local state = swan.state()
 	return state, swan.effect(function()
 		state(callback())
 	end)
+end
+
+state_mt.__unm = function(v : state<number>) : state<number>
+	return swan.derive(function()
+		return -(v :: any)()
+	end) :: state<number>
+end
+
+for op_name, op in binary_ops :: {[string] : any} do
+	state_mt["__"..op_name] = function(a, b)
+		return swan.derive(
+			if getmetatable(a :: any) == state_mt then
+				function()
+					return op(a(), b)
+				end
+			else
+				function()
+					return op(a, b())
+				end
+		)
+	end
+end
+
+--[=[
+	Creates a State.
+
+	@param initial_value T? -- The initial value for the State, can be nil.
+	@param always_force boolean? -- Whether Effects connected to this State will always trigger, even when the value didn't change.
+	@return state<T> -- The created State. Call with no arguments for reading with tracking,
+	call with arguments for writing (2nd argument is for forcing),
+	read .value field for reading without tracking,
+	write .value field for writing without triggering Effects.
+]=]
+function swan.state<T>(initial_value : T?, always_force : boolean?) : state<T>
+	return setmetatable({
+		value = initial_value,
+		callbacks = {},
+		always_force = always_force or false
+	}, state_mt) :: any
 end
 
 --[=[
@@ -241,8 +255,7 @@ type identifier<T> = keyof<T> | indexer<T>
 function swan.mirror<T>(t : T) : (T, {[identifier<T>] : () -> ()})
 	local disconnects : {[identifier<T>] : () -> ()} = {}
 	for k, v in (t :: {[identifier<T>] : unknown}) do
-		local mt = getmetatable(v :: any)
-		if type(v) ~= "function" and not (mt and mt.__call == state__call) then continue end
+		if type(v) ~= "function" and getmetatable(v) ~= state_mt then continue end
 		disconnects[k] = swan.effect(function()
 			(t :: {[identifier<T>] : unknown})[k] = (v :: () -> ())()
 		end)
@@ -256,6 +269,16 @@ end
 ]=]
 function swan.cleanup() : ()
 	table.clear(effects)
+end
+
+--[=[
+	Returns whether the given value is a state.
+
+	@param v any -- The value to check for.
+	@return boolean -- whether the value is a state.
+]=]
+function swan.is_state(v : any) : boolean
+	return getmetatable(v) == state_mt
 end
 
 return swan
