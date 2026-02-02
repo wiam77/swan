@@ -1,6 +1,8 @@
 --!strict
 --[[
 TODO:
+	- These bugs, AFAIK, cannot currently be solved, as they are Luau bugs, and not my implementation's.
+	
 	When creating a State, if its variable type is annotated,
 	and the type of the value passed to swan.state() doesn't match,
 	there should be a type error:
@@ -10,24 +12,21 @@ TODO:
 	there should be a type error:
 	local health : swan.state<number> = swan.state(100)
 	health("i'm not a number")
-
-	- The 2 bugs above could be fixed by using the commented out state<T> type.
 ]]--
 
 local swan = {}
 local binary_ops = require("@self/binary_ops")
 
-export type callback<T = unknown> = (old_value : T?, state_i : number?) -> ...unknown
+export type callback<T = unknown> = ((old_value : T?, state_i : number?) -> () -> ...unknown)
+				  | ((old_value : T?, state_i : number?) -> ())
+				  | ((old_value : T?, state_i : number?) -> nil) -- TODO: should be false?
+
 export type state<T = unknown> = {
 	value : T,
 	always_force : boolean,
 	read callbacks : {[callback<T>] : number}
 } & ( |	(() -> T)
       |	((new_value : T?, force : boolean?) -> T))
-
-local warn = warn or function(msg : string) : ()
-	print(`\x1b[33m{msg}\x1b[0m`)
-end
 
 local function is_function<T>(v : T) : T
 	local vt = type(v)
@@ -82,6 +81,8 @@ function state_mt.__call<T>(self : state<T>, new_value : T?, force : boolean?) :
 	return self.value
 end
 
+local function noop() end
+
 --[=[
 	Creates an Effect, a binding of the given function to the event of States read (by calling) within it being updated.
 	
@@ -89,23 +90,22 @@ end
 	@return () -> () -- Function which disconnects the Effect from the States.
 ]=]
 function swan.effect<T>(callback : callback<T>) : () -> ()
-	if current_callback then
-		warn("Nested effect")
-	end
-
 	effects[callback] = 0
 	current_callback = callback
-	callback()
+	local cleanup = callback()
 	current_callback = nil
 
-	return function()
-		if not effects[callback] then
-			warn("This effect is already disconnected!")
-			return
-		end
-		
+	local function disconnect()
 		effects[callback] = nil
 	end
+
+	return if cleanup then
+		function()
+			disconnect()
+			cleanup()
+			cleanup = noop
+		end
+	else disconnect
 end
 
 --[=[
