@@ -25,7 +25,7 @@ Then run:
 ```
 
 # Documentation
-You can read `swan`'s documentation [here](https://pesde.dev/packages/wiam/swan/latest/any/docs).
+You can read `swan`'s documentation [here](https://wiam.codeberg.page/swan).
 
 # Demo
 ```luau
