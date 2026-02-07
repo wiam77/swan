@@ -10,6 +10,7 @@ apiCategories = [
 favicon = "logo.svg"
 tagline = "A simple state management library"
 url = "https://wiam.codeberg.page"
+baseUrl = "/swan"
 
 [footer]
 style = "light"
