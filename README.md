@@ -19,6 +19,7 @@ Then run:
 ```
 
 ## npm
+`swan` provides typings for TypeScript.
 ```console
 # npm install @rbxts/swan
 ```

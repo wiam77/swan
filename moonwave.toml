@@ -1,0 +1,43 @@
+gitRepoUrl = false # gotta do this to remove the github button on the navbar
+gitSourceBranch = "main"
+
+apiCategories = [
+    "constructor",
+    "utility"
+]
+
+[docusaurus]
+favicon = "logo.svg"
+tagline = "A simple state management library"
+url = "https://wiam.codeberg.page"
+
+[footer]
+style = "light"
+copyright = " "
+
+[footer.logo]
+alt = "swan logo"
+src = "logo.svg"
+href = "/"
+width = 50
+
+[[navbar.items]]
+href = "https://codeberg.org/wiam/swan"
+label = "Codeberg"
+position = "right"
+
+[home]
+enabled = true
+bannerImage = "banner.svg"
+
+[[home.features]]
+title = "Simple"
+description = "Single file, easy to understand, ergonomic, pairs well with other libraries"
+
+[[home.features]]
+title = "Reactive"
+description = "Use states and effects to automatically react to changes"
+
+[[home.features]]
+title = "Type safe"
+description = "Every API member is properly typed, providing a good developer experience"

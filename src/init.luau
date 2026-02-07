@@ -12,21 +12,67 @@ TODO:
 	there should be a type error:
 	local health : swan.state<number> = swan.state(100)
 	health("i'm not a number")
+
+	Typings for implicit derives.
 ]]--
 
+--- @class swan
 local swan = {}
 local binary_ops = require("@self/binary_ops")
 
-export type callback<T = unknown> = ((old_value : T?, state_i : number?) -> () -> ...unknown)
-				  | ((old_value : T?, state_i : number?) -> ())
-				  | ((old_value : T?, state_i : number?) -> nil) -- TODO: should be false?
+--[=[
+	@type cleanup () -> ...unknown
+	@within swan
 
+	Function which gets called when its effect is disconnected.
+]=]
+export type cleanup = () -> ...unknown
+
+--[=[
+	@type disconnecter () -> ()
+	@within swan
+
+	Function which disconnects an effect from its states.
+]=]
+export type disconnecter = () -> ()
+
+--[=[
+	@type callback ((old_value : T?, state_i : number?) -> cleanup) | ((old_value : T?, state_i : number?) -> nil | ())
+	@within swan
+
+	Function which gets called when its effect is triggered.\
+	`old_value` is the state's previous value, which is going to be the same as the current one when an effect is forced.\
+	`state_i` is the order of appearance of the state within the callback.
+]=]
+export type callback<T = unknown> = ((old_value : T?, state_i : number?) -> cleanup)
+				  | ((old_value : T?, state_i : number?) -> ())
+				  | ((old_value : T?, state_i : number?) -> nil) -- TODO: "nil" should be "false?"
+
+--[=[
+	@type state<T> {value : T, always_force : boolean, callbacks : {[callback<T>] : number}} & ((() -> T) | ((new_value : T?, force : boolean?) -> T))
+	@within swan
+
+	The [state](/docs/concepts#state) type.
+]=]
 export type state<T = unknown> = {
 	value : T,
 	always_force : boolean,
 	read callbacks : {[callback<T>] : number}
 } & ( |	(() -> T)
       |	((new_value : T?, force : boolean?) -> T))
+
+type function indexer(t : type) : type
+	return (t:indexer() :: any).index
+end
+
+--[=[
+	@type identifier keyof<T> | indexer<T>
+	@within swan
+	@private
+
+	Union of the fields and the indexer of the given table.
+]=]
+type identifier<T> = keyof<T> | indexer<T>
 
 local function is_function<T>(v : T) : T
 	local vt = type(v)
@@ -84,12 +130,37 @@ end
 local function noop() end
 
 --[=[
-	Creates an Effect, a binding of the given function to the event of States read (by calling) within it being updated.
-	
-	@param callback callback<T> -- The function to be bound.
-	@return () -> () -- Function which disconnects the Effect from the States.
+	Creates an [effect](/docs/concepts#effect) and returns its disconnecter.
+	@tag constructor
+
+	```lua
+	local health = swan.state(100)
+	local printer_disconnecter = swan.effect(function(old_health)
+		print(`old health: {old_health}, current health: {health()}`)
+	end)
+
+	health(40) -- `old health: 100, current health: 40`
+	health.value = 20 -- *crickets*
+	health(60) -- `old health: 20, current health: 60`
+	health(60) -- *crickets*
+	health(60, true) -- `old health: 60, current health: 60`
+
+	printer_disconnecter()
+	health(20) -- *crickets*
+
+	printer_disconnecter() -- you can disconnect again, it's fine!
+
+	local always_forces = swan.state("I always force effects", true)
+	swan.effect(function()
+		print(always_forces(), health.value) -- doesn't track `health`
+	end)
+
+	always_forces("I always force effects") -- "I always force effects"
+	always_forces("I always force effects, again") -- "I always force effects, again"
+	always_forces("I always force effects, again") -- "I always force effects, again"
+	```
 ]=]
-function swan.effect<T>(callback : callback<T>) : () -> ()
+function swan.effect<T>(callback : callback<T>) : disconnecter
 	effects[callback] = 0
 	current_callback = callback
 	local cleanup = callback()
@@ -109,19 +180,30 @@ function swan.effect<T>(callback : callback<T>) : () -> ()
 end
 
 --[=[
-	Wraps an Effect, around the given Callback, which sets a newly created State's value
-	to be the return value of the Callback.
-	Returns the created State and the Effect's disconnect function.
+	Wraps an effect, around the given callback, which sets a newly created state's value
+	to be the return value of said callback.
+
+	Returns the created state and the effect's disconnecter.
 
 	This is useful for States which depend on the value of another State, since their value will
-	be updated only when the State they depend on is also updated, and not every time it is read,
-	as how would happen with a function which's return value depends on a State.
+	be updated only when the State they depend on is also updated, and not every time it is read.
 
-	@param callback () -> T -- The callback.
-	@return state<T> -- The State that was created.
-	@return () -> () -- The created Effect's disconnect function.
+	`swan` also provides [implicit derives](/docs/concepts#implicit_derives).
+
+	@tag constructor
+
+	```lua
+	local stamina = swan.state(100)
+	local possible_jumps = swan.derive(function()
+		return stamina() / 50
+	end)
+
+	print(possible_jumps()) -- 2
+	stamina(50)
+	print(possible_jumps()) -- 1
+	```
 ]=]
-function swan.derive<T>(callback : (() -> T) | () -> ()) : (state<T>, () -> ())
+function swan.derive<T>(callback : callback<T>) : (state<T>, disconnecter)
 	local state = swan.state()
 	return state, swan.effect(function()
 		state(callback())
@@ -150,14 +232,15 @@ for op_name, op in binary_ops :: {[string] : any} do
 end
 
 --[=[
-	Creates a State.
+	Creates and returns a [state](/docs/concepts#state).
+	@tag constructor
 
-	@param initial_value T? -- The initial value for the State, can be nil.
-	@param always_force boolean? -- Whether Effects connected to this State will always trigger, even when the value didn't change.
-	@return state<T> -- The created State. Call with no arguments for reading with tracking,
-	call with arguments for writing (2nd argument is for forcing),
-	read .value field for reading without tracking,
-	write .value field for writing without triggering Effects.
+	```lua
+	local ammo = swan.state(100)
+	local message = swan.state("Hello, World!", true)
+
+	print(ammo(), message.value) -- 100, "Hello, World!"
+	```
 ]=]
 function swan.state<T>(initial_value : T?, always_force : boolean?) : state<T>
 	return setmetatable({
@@ -168,9 +251,24 @@ function swan.state<T>(initial_value : T?, always_force : boolean?) : state<T>
 end
 
 --[=[
-	Batches any State write operation up until the given function is done running.
+	Batches any state write operation up until the given function is done running.
 
-	@param f () -> ...unknown -- The function.
+	```lua
+	local text = swan.state("Hey, how is it going?")
+
+	swan.effect(function()
+		print(text())
+	end)
+	
+	swan.batch(function()
+		text("Hello, World!")
+		text("Bye, World!")
+	end) -- the previous effect will only print "Bye, World!"
+
+	swan.batch(function()
+		text.value = "Oops"
+	end) -- be careful! If the last write operation is done through .value, the effect will also trigger! -- "Oops"
+	```
 ]=]
 function swan.batch(f : () -> ...unknown) : ()
 	batching = true
@@ -187,13 +285,36 @@ function swan.batch(f : () -> ...unknown) : ()
 end
 
 --[=[
-	Wraps the given Callbacks into Effects.
-	Returns a function which disconnects all the created Effects.
+	Wraps the given callbacks into effects.\
+	Returns a function which disconnects all the created effects.
 
-	@param ... () -> () -- The Callbacks.
-	@return () -> () -- The disconnecter.
+	```lua
+	local health, stamina, ammo = swan.state(100), swan.state(100), swan.state(20)
+
+	local info_ui_scope = swan.scope(
+		function()
+			print("Your health is", health())
+		end,
+		function()
+			print("Your stamina is", stamina())
+		end,
+		function()
+			print(`Ammo: {ammo()}/40`)
+		end,
+	)
+
+	health(30) -- "Your health is 30"
+	stamina(10) -- "Your health is 10"
+	ammo(10) -- "Ammo: 10/40"
+	
+	info_ui_scope()
+
+	health(30) -- *crickets*
+	stamina(10) -- *crickets*
+	ammo(10) -- *crickets*
+	```
 ]=]
-function swan.scope(... : callback) : () -> ()
+function swan.scope(... : callback) : disconnecter
 	local disconnects = {}
 	for _, callback in {...} do
 		table.insert(disconnects, swan.effect(callback))
@@ -207,11 +328,31 @@ function swan.scope(... : callback) : () -> ()
 end
 
 --[=[
-	Branching function to be used within Effects.
+	[Branching](/docs/concepts#branching) function to be used within effects.
+
 	Pass a condition to be checked, and after it a function to be run if it's successful.
 	The last value, if a function, and if not after a condition, will be threated as the "else" branch.
 
 	@param ... any -- The values and the branches.
+
+	```lua
+	local age = swan.state(16)
+	local role = "admin"
+
+	local bad_validator = swan.effect(function()
+		if role ~= "admin" then -- admins can bypass the age verification
+			assert(age() >= 18, "Your age is too low!")
+		end
+	end) -- won't detect `age` since in the first run, the condition was false, and age() wasn't called.
+	
+	local validator = swan.effect(function()
+		swan.branch(
+			role ~= "admin", function()
+				assert(age() >= 18, "Your age is too low!")
+			end
+		)
+	end) -- will detect `age`
+	```
 ]=]
 function swan.branch(... : any) : ()
 	local args = table.pack(...)
@@ -232,50 +373,46 @@ function swan.branch(... : any) : ()
 	end
 end
 
-type function indexer(t : type) : type
-	return (t:indexer() :: any).index
-end
-
--- couldn't think of a better name
-type identifier<T> = keyof<T> | indexer<T>
-
 --[=[
-	Iterates over the given table and creates an Effect for each key that is
-	either a function or a State, updating the key's value to be the return value of the
-	function, or the State's value.
-	Returns table containing each key's Effect's disconnect function.
+	Returns whether the given value is a state.
+	@tag utility
 
-	@param t T -- The table to iterate.
-	@return T -- The given table.
-	@return {[identifier<T>] : () -> ()} -- The table containing the disconnect functions.
+	```lua
+	local not_a_state = "Hey"
+	print(swan.is_state(not_a_state)) -- false
+
+	local a_state = swan.state("Cool")
+	print(swan.is_state(a_state)) -- true
+	```
 ]=]
-function swan.mirror<T>(t : T) : (T, {[identifier<T>] : () -> ()})
-	local disconnects : {[identifier<T>] : () -> ()} = {}
-	for k, v in (t :: {[identifier<T>] : unknown}) do
-		if type(v) ~= "function" and getmetatable(v) ~= state_mt then continue end
-		disconnects[k] = swan.effect(function()
-			(t :: {[identifier<T>] : unknown})[k] = (v :: () -> ())()
-		end)
-	end
-
-	return t, disconnects
+function swan.is_state(v : any) : boolean
+	return getmetatable(v) == state_mt
 end
 
 --[=[
 	Disconnects all Effects.
+	@tag utility
+
+	```lua
+	local money = swan.state(10000)
+
+	swan.effect(function()
+		print("Your money:", money())
+	end)
+
+	swan.effect(function()
+		print("Your money (again):", money())
+	end)
+	
+	-- ...
+
+	money(100) -- "Your money: 100", "Your money (again): 100"
+	swan.clear()
+	money(10) -- *crickets*
+	```
 ]=]
-function swan.cleanup() : ()
+function swan.clear() : ()
 	table.clear(effects)
-end
-
---[=[
-	Returns whether the given value is a state.
-
-	@param v any -- The value to check for.
-	@return boolean -- whether the value is a state.
-]=]
-function swan.is_state(v : any) : boolean
-	return getmetatable(v) == state_mt
 end
 
 return swan
