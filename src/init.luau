@@ -8,11 +8,6 @@ TODO:
 	there should be a type error:
 	local health : swan.state<number> = swan.state("i'm not a number") -- doesn't error
 
-	When modifying a State, if the value passed to state() doesn't match its type,
-	there should be a type error:
-	local health : swan.state<number> = swan.state(100)
-	health("i'm not a number")
-
 	Typings for implicit derives.
 ]]--
 
