@@ -13,7 +13,8 @@ TODO:
 
 --- @class swan
 local swan = {}
-local binary_ops = require("@self/binary_ops")
+
+-- TYPES --
 
 --[=[
 	@type cleanup () -> ...unknown
@@ -69,20 +70,36 @@ end
 ]=]
 type identifier<T> = keyof<T> | indexer<T>
 
-local function is_function<T>(v : T) : T
-	local vt = type(v)
-	assert(vt == "function", `Expected type 'function', got '{vt}'`)
-	return v
-end
+-- CONSTANTS --
+local BINARY_OPS = {
+	concat = function(a, b) return a ..b end,
+	add    = function(a, b) return a + b end,
+	sub    = function(a, b) return a - b end,
+	mul    = function(a, b) return a * b end,
+	div    = function(a, b) return a / b end,
+	idiv   = function(a, b) return a //b end,
+	mod    = function(a, b) return a % b end,
+	pow    = function(a, b) return a ^ b end,
+}
 
+-- VARIABLES --
 local batching = false
 local batched : {[state] : {any}} = {} -- {[state] : {[1] : {[callback] = true}, [2] : old_value, [3] : state_i}}
 
 local current_callback : callback? = nil
 local effects : {[callback] : number} = {}
 
-local state_mt = {}
+-- UTILS --
+local function is_function<T>(v : T) : T
+	local vt = type(v)
+	assert(vt == "function", `Expected type 'function', got '{vt}'`)
+	return v
+end
 
+local function noop() end
+
+-- STATE_MT --
+local state_mt = {}
 function state_mt.__call<T>(self : state<T>, new_value : T?, force : boolean?) : T
 	local old_value = self.value
 	local callbacks = self.callbacks
@@ -122,7 +139,77 @@ function state_mt.__call<T>(self : state<T>, new_value : T?, force : boolean?) :
 	return self.value
 end
 
-local function noop() end
+function state_mt.__unm(v : state<number>) : state<number>
+	return swan.derive(function()
+		return -(v :: any)()
+	end) :: state<number>
+end
+
+for op_name, op in BINARY_OPS :: {[string] : any} do
+	state_mt["__"..op_name] = function(a, b)
+		return swan.derive(
+			if getmetatable(a :: any) == state_mt then
+				function()
+					return op(a(), b)
+				end
+			else
+				function()
+					return op(a, b())
+				end
+		)
+	end
+end
+-- MODULE --
+
+--[=[
+	Creates and returns a [state](/docs/concepts#state).
+	@tag constructor
+
+	```lua
+	local ammo = swan.state(100)
+	local message = swan.state("Hello, World!", true)
+
+	print(ammo(), message.value) -- 100, "Hello, World!"
+	```
+]=]
+function swan.state<T>(initial_value : T?, always_force : boolean?) : state<T>
+	return setmetatable({
+		value = initial_value,
+		callbacks = {},
+		always_force = always_force or false
+	}, state_mt) :: any
+end
+
+--[=[
+	Wraps an effect, around the given callback, which sets a newly created state's value
+	to be the return value of said callback.
+
+	Returns the created state and the effect's disconnecter.
+
+	This is useful for States which depend on the value of another State, since their value will
+	be updated only when the State they depend on is also updated, and not every time it is read.
+
+	`swan` also provides [implicit derives](/docs/concepts#implicit_derives).
+
+	@tag constructor
+
+	```lua
+	local stamina = swan.state(100)
+	local possible_jumps = swan.derive(function()
+		return stamina() / 50
+	end)
+
+	print(possible_jumps()) -- 2
+	stamina(50)
+	print(possible_jumps()) -- 1
+	```
+]=]
+function swan.derive<T>(callback : callback<T>) : (state<T>, disconnecter)
+	local state = swan.state()
+	return state, swan.effect(function()
+		state(callback())
+	end)
+end
 
 --[=[
 	Creates an [effect](/docs/concepts#effect) and returns its disconnecter.
@@ -172,77 +259,6 @@ function swan.effect<T>(callback : callback<T>) : disconnecter
 			cleanup = noop
 		end
 	else disconnect
-end
-
---[=[
-	Wraps an effect, around the given callback, which sets a newly created state's value
-	to be the return value of said callback.
-
-	Returns the created state and the effect's disconnecter.
-
-	This is useful for States which depend on the value of another State, since their value will
-	be updated only when the State they depend on is also updated, and not every time it is read.
-
-	`swan` also provides [implicit derives](/docs/concepts#implicit_derives).
-
-	@tag constructor
-
-	```lua
-	local stamina = swan.state(100)
-	local possible_jumps = swan.derive(function()
-		return stamina() / 50
-	end)
-
-	print(possible_jumps()) -- 2
-	stamina(50)
-	print(possible_jumps()) -- 1
-	```
-]=]
-function swan.derive<T>(callback : callback<T>) : (state<T>, disconnecter)
-	local state = swan.state()
-	return state, swan.effect(function()
-		state(callback())
-	end)
-end
-
-state_mt.__unm = function(v : state<number>) : state<number>
-	return swan.derive(function()
-		return -(v :: any)()
-	end) :: state<number>
-end
-
-for op_name, op in binary_ops :: {[string] : any} do
-	state_mt["__"..op_name] = function(a, b)
-		return swan.derive(
-			if getmetatable(a :: any) == state_mt then
-				function()
-					return op(a(), b)
-				end
-			else
-				function()
-					return op(a, b())
-				end
-		)
-	end
-end
-
---[=[
-	Creates and returns a [state](/docs/concepts#state).
-	@tag constructor
-
-	```lua
-	local ammo = swan.state(100)
-	local message = swan.state("Hello, World!", true)
-
-	print(ammo(), message.value) -- 100, "Hello, World!"
-	```
-]=]
-function swan.state<T>(initial_value : T?, always_force : boolean?) : state<T>
-	return setmetatable({
-		value = initial_value,
-		callbacks = {},
-		always_force = always_force or false
-	}, state_mt) :: any
 end
 
 --[=[
