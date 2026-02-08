@@ -8,6 +8,9 @@ TODO:
 	there should be a type error:
 	local health : swan.state<number> = swan.state("i'm not a number") -- doesn't error
 
+	String states get implicitly typed as state<unknown>:
+	local message = swan.state("Hello, World!") -- message's type is `unknown`, not `string`.
+	
 	Typings for implicit derives.
 ]]--
 
