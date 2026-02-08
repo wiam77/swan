@@ -401,29 +401,35 @@ function swan.is_state(v : any) : boolean
 end
 
 --[=[
-	Disconnects all Effects.
+	Disconnects all the effects from a specific state or in general.
 	@tag utility
 
 	```lua
 	local money = swan.state(10000)
+	local health = swan.state(100)
 
 	swan.effect(function()
 		print("Your money:", money())
+		print("Your health:", health())
 	end)
 
 	swan.effect(function()
 		print("Your money (again):", money())
 	end)
 	
-	-- ...
+	money(100) -- "Your money: 100", "Your health: 50", "Your money (again): 100"
+	health(50) -- "Your money: 100", "Your health: 50"
 
-	money(100) -- "Your money: 100", "Your money (again): 100"
+	swan.clear(health)
+	health(200) -- *crickets*
+	money(50) -- "Your money: 50", "Your health: 200", "Your money (again): 50"
+
 	swan.clear()
 	money(10) -- *crickets*
 	```
 ]=]
-function swan.clear() : ()
-	table.clear(effects)
+function swan.clear<T>(state : state<T>?) : ()
+	table.clear(state and state.callbacks or effects)
 end
 
 return swan
