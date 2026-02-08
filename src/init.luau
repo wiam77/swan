@@ -53,6 +53,7 @@ export type callback<T = unknown> = ((old_value : T?, state_i : number?) -> clea
 export type state<T = unknown> = {
 	value : T,
 	always_force : boolean,
+	always_raw : boolean,
 	read callbacks : {[callback<T>] : number}
 } & ( |	(() -> T)
       |	((new_value : T?, force : boolean?) -> T))
@@ -90,6 +91,55 @@ local current_callback : callback? = nil
 local effects : {[callback] : number} = {}
 
 -- UTILS --
+local function deep_clone(t : {[any] : any}) : {[any] : any}
+	local clone = {}
+
+	for k, v in t do
+		if type(k) == "table" then
+			k = deep_clone(k)
+		end
+		if type(v) == "table" then
+			v = deep_clone(v)
+		end
+
+		clone[k] = v
+	end
+
+	return clone
+end
+
+local function table_state_proxy(t : any, root : any, state : state, raw : boolean?)
+	local mt = getmetatable(t)
+	if raw or type(t) ~= "table" or (mt and mt.is_proxy) then return t end
+
+	t = deep_clone(t) -- retain the old state
+
+	for k, v in t do
+		t[table_state_proxy(k, root, state, raw)] = v
+		t[k] = table_state_proxy(v, root, state, raw)
+	end
+
+	local proxy_mt = {
+		is_proxy = true,
+		__index = t
+	}
+
+	local proxy = setmetatable({}, proxy_mt)
+	if t == root then root = proxy end
+
+	function proxy_mt.__newindex(_, k, v)
+		if t[k] == v and not state.always_force then return end
+		t[k] = v
+
+		-- gotta do it this way because the old and current values are being swapped.
+		for callback, i in state.callbacks do
+			callback(root, i)
+		end
+	end
+
+	return proxy
+end
+
 local function is_function<T>(v : T) : T
 	local vt = type(v)
 	assert(vt == "function", `Expected type 'function', got '{vt}'`)
@@ -100,7 +150,7 @@ local function noop() end
 
 -- STATE_MT --
 local state_mt = {}
-function state_mt.__call<T>(self : state<T>, new_value : T?, force : boolean?) : T
+function state_mt.__call<T>(self : state<T>, new_value : T?, force : boolean?, raw : boolean?) : T
 	local old_value = self.value
 	local callbacks = self.callbacks
 
@@ -110,6 +160,7 @@ function state_mt.__call<T>(self : state<T>, new_value : T?, force : boolean?) :
 			callbacks[current_callback] = effects[current_callback]
 		end
 	elseif old_value ~= new_value or self.always_force or force then
+		new_value = table_state_proxy(new_value, new_value, self, raw or self.always_raw)
 		self.value = new_value
 
 		for callback, state_i in callbacks do
@@ -172,12 +223,17 @@ end
 	print(ammo(), message.value) -- 100, "Hello, World!"
 	```
 ]=]
-function swan.state<T>(initial_value : T?, always_force : boolean?) : state<T>
-	return setmetatable({
-		value = initial_value,
+function swan.state<T>(initial_value : T?, always_force : boolean?, always_raw : boolean?) : state<T>
+	local inner_self = {
 		callbacks = {},
-		always_force = always_force or false
-	}, state_mt) :: any
+		always_force = always_force,
+		always_raw = always_raw
+	}
+
+	local self : state<T> = setmetatable(inner_self, state_mt) :: any
+	initial_value = table_state_proxy(initial_value, initial_value, self, always_raw)
+	self.value = initial_value
+	return self
 end
 
 --[=[

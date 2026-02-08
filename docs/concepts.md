@@ -10,6 +10,7 @@ with the fields:
 - **.value:** The state's current value. Read and write this if you don't intend to track this state or trigger effects.
 - **.callbacks:** List of the functions bound to this state.
 - **.always_force:** Whether every write operation for this state is automatically forced.
+- **.always_raw:** Whether every write operation for this state is automatically raw.
 
 and a metatable which implements the metamethods:
 - **__call()**: For reading with tracking
@@ -43,6 +44,14 @@ Do note that currently, because of some Luau bugs, the metamethods aren't proper
 
 ## Effect
 An effect is a binding which will automatically trigger its [function](/api/swan#callback) whenever its [states](/api/swan#callback) get updated (or forced).
+
+## Table states
+Unless told otherwise, through the use of `raw`, swan will automatically trigger effects whenever a table is changed (works with nested ones too!).
+note, tip, info, warning, danger
+
+:::info
+Given the way swan does this, which involves creating a proxy table with some metamethods, functions such as `print` (in Lune) will not show the contents of the table, but they are there!
+:::
 
 ## Forcing
 By default, effects only trigger when one of their states change values, but this can be changed by forcing.
