@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.0.0] - 2026-05-04
 ### Added
 - Documentation website (through Moonwave): https://wiam.codeberg.page/swan
-- [`swan.create()`] and [`swan.component()`] for [Roblox](http://wiam.codeberg.page/swan/api/swan#roblox).
+- [`swan.create()`](https://wiam.codeberg.page/swan/api/swan#create) and [`swan.component()`](https://wiam.codeberg.page/swan/api/swan#component) for [Roblox](http://wiam.codeberg.page/swan/api/swan#roblox).
 - [Implicit deriveds](http://wiam.codeberg.page/swan/docs/concepts#implicit-deriveds).
 - [Proxy states for tables](https://wiam.codeberg.page/swan/docs/concepts#table-states).
 - [`swan.block_effect()`](https://wiam.codeberg.page/swan/api/swan#block_effect).
