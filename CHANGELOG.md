@@ -49,7 +49,8 @@ putting them into a single disconnecter.
 ## [v0.1.0] - 2026-01-19
 Initial release.
 
-[Unreleased]: https://codeberg.org/wiam/swan/compare/v0.1.2...HEAD
+[Unreleased]: https://codeberg.org/wiam/swan/compare/v1.0.0...HEAD
+[v1.0.0]: https://codeberg.org/wiam/swan/compare/v0.1.2...v1.0.0
 [v0.1.2]: https://codeberg.org/wiam/swan/compare/v0.1.1...v0.1.2
 [v0.1.1]: https://codeberg.org/wiam/swan/compare/v0.1.0...v0.1.1
 [v0.1.0]: https://codeberg.org/wiam/swan/releases/tag/v0.1.0
