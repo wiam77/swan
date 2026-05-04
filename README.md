@@ -29,32 +29,23 @@ You can read `swan`'s documentation [here](https://wiam.codeberg.page/swan).
 
 # Demo
 ```luau
---!strict
-
-local swan = require("path/to/swan")
-
-local name = swan.state("john", true)
-local login_year = swan.state(2020)
-
-local login_disconnect = swan.effect(function(last_login : number?)
-	print(`{name.value}, it's been {login_year() - (last_login or 0)} years!`)
-end)
-
-login_year(2025) -- "john, it's been 5 years!"
-login_year(2025) -- doesn't print because value didn't change
-login_year(2025, true) -- "john, it's been 0 years!" - this prints since it's forced
-
-name("doe") -- doesn't print because we are reading with name.value, and not name()
-
-swan.effect(function(old_name : string?)
-	print(`hey {old_name}, your name has been changed to '{name()}'`)
-end)
-
-name("jane") -- "hey doe, your name has been changed to jane"
-name("jane") -- "hey jane, your name has been changed to jane" - this one is forced by default
-
-login_disconnect()
-login_year(2026) -- doesn't print because the effect was disconnected
-
-swan.cleanup() -- disconnect all effects
+local bullets = state(100)
+local main_frame = create("Frame", {
+	BackgroundColor3 = Color3.new(),
+	Size = UDim2.fromScale(1, 1),
+	Children = {
+		create("UIGridLayout", {
+			CellSize = UDim2.fromOffset(100, 100)
+		}),
+		bullets_label = create("TextLabel", {
+			Text = "Bullets: "..bullets :: string -- implicit derived
+		}),
+		shoot_button = create("TextButton", {
+			Text = "Shoot",
+			MouseButton1Down = function()
+				bullets(bullets.value - 1)
+			end
+		})
+	}
+})
 ```
