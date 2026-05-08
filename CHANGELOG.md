@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Removed warnings for when an effect would yield and a block effect would not.
+- Changed SWAN_PROXY_ID and SWAN_REAL_ID to be non-unique string identifiers, for persistence across sessions.
 
 ## [v1.0.0] - 2026-05-04
 ### Added

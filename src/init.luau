@@ -75,8 +75,8 @@ export type state<T = unknown> = {
 	The proxy table type. Learn more [here](/docs/concepts#table-states).
 ]=]
 type proxy_base<T> = setmetatable<T, {
-	-- [SWAN_PROXY_ID] : true
-	-- [SWAN_REAL_ID] : T,
+	_is_swan_proxy : true,
+	_swan_real : T,
 	__index : T,
 	__newindex : ({}, any, any) -> (),
 }>
@@ -89,8 +89,8 @@ type proxy_base<T> = setmetatable<T, {
 	A hack to provide better types.
 ]=]
 type proxy_base_hack<T> = setmetatable<{}, {
-	-- [SWAN_PROXY_ID] : true
-	-- [SWAN_REAL_ID] : T,
+	_is_swan_proxy : true,
+	_swan_real : T,
 	__index : T,
 	__newindex : ({}, any, any) -> ()
 }>
@@ -132,22 +132,22 @@ type scope_node = {
 
 -- CONSTANTS --
 --[=[
-	@prop SWAN_PROXY_ID userdata
+	@prop SWAN_PROXY_ID string
 	@within swan
 	@private
 
-	Unique identifier used by `swan` to detect whether a table is a proxy or not.
+	Identifier used by `swan` to detect whether a table is a proxy or not.
 ]=]
-local SWAN_PROXY_ID = newproxy()
+local SWAN_PROXY_ID = "_is_swan_proxy"
 
 --[=[
-	@prop SWAN_REAL_ID userdata
+	@prop SWAN_REAL_ID string
 	@within swan
 	@private
 
-	Unique identifier used by `swan` to access the "real" value of a proxy table.
+	Identifier used by `swan` to access the "real" value of a proxy table.
 ]=]
-local SWAN_REAL_ID = newproxy()
+local SWAN_REAL_ID = "_swan_real"
 
 local BINARY_OPS : {[string] : (any, any) -> unknown} = {
 	concat = function(a, b) return a ..b end,
