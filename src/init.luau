@@ -355,13 +355,6 @@ local function effect_base(original : any, callback : any, is_block : boolean)
 	local ok, cleanup_data = coroutine.resume(co)
 	if not ok then error(cleanup_data) end
 
-	local yields = coroutine.status(co) == "suspended"
-	if yields and not is_block then
-		print("[WARNING] The provided callback yields, you might want to use `block_effect()`.")
-	elseif not yields and is_block then
-		print("[WARNING] The provided callback doesn't yield, you might want to use `effect()`.")
-	end
-
 	current_callback = (current_callback :: callback_node).previous
 
 	local function disconnecter()
@@ -429,8 +422,7 @@ end
 
 --[=[
 	Creates an effect which cancels its previously running "instance" (thread).\
-	This is useful for when the callback yields; you will receive a warning if it doesn't,
-	telling you to use [`swan.effect()`](/api/swan#effect) instead, and vice-versa.
+	This is useful for when the callback yields.
 
 	Here's a simple comparison between normal effects and block effects, using some pseudo-code:
 	```lua
