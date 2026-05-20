@@ -130,6 +130,37 @@ type scope_node = {
 	previous : scope_node?
 }
 
+--[=[
+	@type easing_fun (a : number, b: number, t : number) -> number
+	@within swan
+
+	A function which computes an easing curve, for tweening.
+
+	Takes the start value `a` (t=0), end value `b` (t=1) and
+	normalized progress `t` (0..1).
+]=]
+export type easing_fun = (a : number, b: number, t : number) -> number
+
+--[=[
+	@type easing_dir "in" | "out" | "in-out"
+	@within swan
+
+	Defines the linearity of a tween.
+
+	Ease-in: slow -> fast\
+	Ease-out: fast -> slow\
+	Ease-in-out: slow -> fast -> slow
+]=]
+export type easing_dir = "in" | "out" | "in-out"
+
+--[=[
+	@type tweenable number | vector | Vector2 | Vector2int16 | Vector3 | Vector3int16 | UDim | UDim2 | CFrame
+	@within swan
+
+	Value that can be tweened with `swan.tween()`.
+]=]
+export type tweenable = number | vector | Vector2 | Vector2int16 | Vector3 | Vector3int16 | UDim | UDim2 | CFrame
+
 -- CONSTANTS --
 --[=[
 	@prop SWAN_PROXY_ID string
@@ -175,7 +206,7 @@ local function deep_clone<K, V>(t : {[K] : V}) : {[K] : V}
 	if type(t) ~= "table" then return t end
 
 	local clone : any = {}
-	for k, v in t do
+	for k, v : any in t do
 		clone[k] = deep_clone(v)
 	end
 
@@ -341,20 +372,14 @@ function swan.proxy_state<T>(initial_value : T & {[any] : any}, always_force : b
 	return self
 end
 
-local function effect_base(original : any, callback : any, is_block : boolean)
+local function effect_base(original : any, callback : any)
 	current_callback = {
 		value = callback,
 		previous = current_callback
 	}
 
 	effects[callback] = 0
-	local co = coroutine.create(function()
-		return {original()}
-	end)
-
-	local ok, cleanup_data = coroutine.resume(co)
-	if not ok then error(cleanup_data) end
-
+	local cleanup_data = {original()}
 	current_callback = (current_callback :: callback_node).previous
 
 	local function disconnecter()
@@ -417,7 +442,7 @@ end
 	```
 ]=]
 function swan.effect<T, U...>(callback : callback<T, U...>) : disconnecter
-	return effect_base(callback, callback, false)
+	return effect_base(callback, callback)
 end
 
 --[=[
@@ -451,7 +476,7 @@ function swan.block_effect<T, U...>(callback : callback<T, U...>) : disconnecter
 		block_effects[original] = new
 	end
 
-	return effect_base(original, callback, true)
+	return effect_base(original, callback)
 end
 
 --[=[
@@ -484,8 +509,8 @@ function swan.derived<T>(f : (() -> T) | (() -> ())) : (state<T>, disconnecter)
 end
 
 --[=[
-	Collects the disconnecters of all the effects that were ran within the given function,\
-	and returns an "omni-disconnecter" which calls all of them.\
+	Collects the disconnecters of all the effects that were ran within the given function,
+	and returns an "omni-disconnecter" which calls all of them.
 	Works with nested effects and scopes too.
 
 	```lua
@@ -531,6 +556,219 @@ function swan.scope(f : () -> ...unknown) : disconnecter
 		table.insert(current_scope.disconnecters, self)
 	end
 	return self
+end
+
+--* TWEENING *--
+local easing_powers = {
+	linear = 1,
+	quadratic = 2,
+	sine = 1,
+	exponential = 2,
+	circular = 2,
+	back = 3,
+	elastic = 3,
+	bounce = 2,
+}
+
+--[=[
+	@type default_easing_fun "linear" | "quadratic" | "sine" | "exponential" | "circular" | "back" | "elastic" | "bounce"
+	@within swan
+
+	Name for the default easing functions provided by `swan`.
+]=]
+export type default_easing_fun = keyof<typeof(easing_powers)>
+
+local function vector_decomposer(v)
+	return {v.X, v.Y, v.Z}
+end
+
+local component_handlers : any = { -- {[1] = decomposeer, [2] = recomposer}
+	number = {
+		function(v) return {v} end,
+		function(c) return c[1] end,
+	},
+	vector = {
+		vector_decomposer,
+		function(c) return vector.create(c[1], c[2], c[3]) end,
+	},
+	Vector2 = {
+		vector_decomposer,
+		function(c) return Vector2.new(c[1], c[2]) end,
+	},
+	Vector2int16 = {
+		vector_decomposer,
+		function(c) return Vector2int16.new(c[1], c[2]) end,
+	},
+	Vector3 = {
+		vector_decomposer,
+		function(c) return Vector3.new(c[1], c[2], c[3]) end,
+	},
+	Vector3int16 = {
+		vector_decomposer,
+		function(c) return Vector3int16.new(c[1], c[2]) end,
+	},
+	UDim = {
+		function(v) return {v.Scale, v.Offset} end,
+		function(c) return UDim.new(c[1], c[2]) end,
+	},
+	UDim2 = {
+		function(v) return {v.X.Scale, v.X.Offset, v.Y.Scale, v.Y.Offset} end,
+		function(c) return UDim2.new(c[1], c[2], c[3], c[4]) end,
+	},
+	CFrame = {
+		function(v)
+			return {v:GetComponents()}
+		end,
+		function(c)
+			return CFrame.fromMatrix(
+				Vector3.new(c[1], c[2], c[3]),
+				Vector3.new(c[4], c[5], c[6]),
+				Vector3.new(c[7], c[8], c[9]),
+				Vector3.new(c[10], c[11], c[12])
+			)
+		end
+	}
+}
+
+local default_easing_funs : {[default_easing_fun] : easing_fun} = {
+	linear = function(a, b, t)
+		return a * (1 - t) + b * t
+	end,
+	quadratic = function(a, b, t)
+		return a + (b - a) * t*t
+	end,
+	sine = function(a, b, t)
+		return a + (b - a) * (1 - math.cos(t * math.pi / 2))
+	end,
+	exponential = function(a, b, t)
+		return a + (b - a) *
+			if t == 0 then 0
+			else if t == 1 then 1
+			else (2 ^ (10 * (t - 1)))
+	end,
+	circular = function(a, b, t)
+		return a + (b - a) * (1 - math.sqrt(1 - math.min(1, math.max(0, t*t))))
+	end,
+	back = function(a, b, t)
+		return a + (b - a) * (t*t * ((1.70158 + 1) * t - 1.70158))
+	end,
+	elastic = function(a, b, t)
+		if t == 0 then return a end
+		if t == 1 then return b end
+
+		local p = 0.3
+		local eased = 2^(-10 * t) * math.sin((t - p / 4) * (2 * math.pi) / p) + 1
+
+		return a + (b - a) * eased
+	end,
+	bounce = function(a, b, t)
+		return a + (b - a) *
+			if t < 1/2.75 then 7.5625 * t*t
+			else if t < 2/2.75 then 7.5625 * (t - 1.5/2.75)^2 + 0.75
+			else if t < 2.5/2.75 then 7.5625 * (t - 2.25/2.75)^2 + 0.9375
+			else 7.5625 * (t - 2.625/2.75)^2 + 0.984375
+	end,
+}
+
+local function apply_easing<T>(start_value : T, goal_value : T, t : number, easing_fun : easing_fun, data_type : string)
+	local handlers = component_handlers[data_type]
+	local decomposer = handlers[1]
+	local start_components = decomposer(start_value)
+	local goal_components = decomposer(goal_value)
+
+	for i, v in start_components do
+		goal_components[i] = easing_fun(v, goal_components[i], t)
+	end
+
+	return handlers[2](goal_components)
+end
+
+--[=[
+	Creates and returns a "tween state" which depends on the given target state.
+	Whenever the target changes, the created state will tween towards the new value,
+	depending on the given parameters.
+
+	The options table parameter takes the following options:
+	```agda
+	{
+		easing_dir : easing_dir? -- The direction of the tween.
+		delay : number? -- Time (seconds) to wait before tweening towards the target once it changes.
+		bounces : number? -- Number of times the tween will repeat back and forth.
+		on_complete : () -> ()? -- Callback that gets called when the tween is done (after every bounce).
+	}
+	```
+
+	@param duration number -- How long each tween should take.
+	@param easing_fun default_easing_fun | easing_fun -- Either the name of a default easing function, or a custom one.
+]=]
+function swan.tween<T>(target : state<T & tweenable>, duration : number, easing_fun : default_easing_fun | easing_fun,
+	options : {
+		easing_dir : easing_dir?,
+		delay : number?,
+		bounces : number?,
+		on_complete : () -> ()?
+	}?) : state<T>
+	assert(swan.wait, "The wait function (swan.wait) was not provided.")
+
+	local target_value = target.value
+	local data_type = typeof(target_value)
+	local tweened = swan.state(target_value)
+
+	local easing_f = default_easing_funs[easing_fun :: default_easing_fun] or (easing_fun :: easing_fun)
+	local opts = options or {} :: any
+	local easing_dir : easing_dir? = opts.easing_dir
+	local easing_power : number = easing_powers[easing_fun] -- should be `number?`
+
+	local first = true
+	swan.effect(function()
+		local goal = target()
+		if first then
+			first = false
+			return
+		end
+
+		if opts.delay then
+			(swan.wait :: any)(opts.delay)
+		end
+
+		local start_value = tweened.value
+		for current_bounce = 0, opts.bounces or 0 do
+			local start_time = os.clock()
+			local progress = 0
+
+			while progress < 1 do
+				progress = math.min((os.clock() - start_time) / duration, 1)
+
+				local t = progress
+				if easing_power then
+					if easing_dir == "in" then
+						t ^= easing_power
+					elseif easing_dir == "out" then
+						t = 1 - (1 - t) ^ easing_power
+					elseif easing_dir == "in-out" then
+						if t < 0.5 then
+							t = 0.5 * (2 * t) ^ easing_power
+						else
+							t = 1 - 0.5 * (2 - 2 * t) ^ easing_power
+						end
+					end
+				end
+
+				if current_bounce % 2 == 1 then
+					t = 1 - t
+				end
+
+				tweened(apply_easing(start_value, goal, t, easing_f, data_type));
+				(swan.wait :: any)()
+			end
+		end
+
+		if opts.on_complete :: any then
+			opts.on_complete()
+		end
+	end)
+
+	return tweened
 end
 
 --* SWAN UTILITIES *--
@@ -747,6 +985,14 @@ end
 
 if not Instance then return swan end
 
+--[=[
+	@prop wait (number?) -> number
+	@within swan
+
+	A wait function that needs to be provided for `swan.tween()` to work.
+]=]
+swan.wait = task.wait :: ((number?) -> number)?
+
 --* ROBLOX *--
 local function implicit_effect(instance : Instance, value : any, action : (...any) -> ()) : any
 	if utils.is_state(value) then
@@ -762,7 +1008,6 @@ local function apply_properties(instance : any, properties : {[any] : any}) : an
 	local nested_props = {}
 	for property_name, value in properties do
 		if property_name == "Children" then
-			print("im ere")
 			implicit_effect(instance, value, function(value : any, old)
 				value = utils.is_proxy(value) and utils.get_real(value) or value
 
@@ -844,7 +1089,7 @@ end
 	if their name is unset (Name = ClassName); or a state containing said table.
 	If it's the latter, `swan` will implicitly create an effect which automatically destroys/parents Instances
 	that were removed/added to the table.
-	- **<number>**: a nested Properties table, useful for [components](/api/swan#component).
+	- **number**: a nested Properties table, useful for [components](/api/swan#component).
 
 	@param class T -- Class name or base instance
 	@param properties properties -- Table of properties to be applied to the Instance.

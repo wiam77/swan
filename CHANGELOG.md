@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v1.1.0] - 2026-05-20
+### Added
+- Tweening capabilities through [`swan.tween()`](https://wiam.codeberg.page/swan/api/swan#tween),
+with multiple default easing functions (with support for custom ones), directions (in, out, in-out),
+data-types (numbers, vectors, UDims and CFrames) and options (bounces (yoyo), delay and on_complete callback).
+
 ### Changed
 - Removed warnings for when an effect would yield and a block effect would not.
 - Changed SWAN_PROXY_ID and SWAN_REAL_ID to be non-unique string identifiers, for persistence across sessions.
@@ -52,7 +59,8 @@ putting them into a single disconnecter.
 ## [v0.1.0] - 2026-01-19
 Initial release.
 
-[Unreleased]: https://codeberg.org/wiam/swan/compare/v1.0.0...HEAD
+[Unreleased]: https://codeberg.org/wiam/swan/compare/v1.1.0...HEAD
+[v1.1.0]: https://codeberg.org/wiam/swan/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://codeberg.org/wiam/swan/compare/v0.1.2...v1.0.0
 [v0.1.2]: https://codeberg.org/wiam/swan/compare/v0.1.1...v0.1.2
 [v0.1.1]: https://codeberg.org/wiam/swan/compare/v0.1.0...v0.1.1

@@ -7,5 +7,3 @@ target = "lune"
 
 [workspace."wiam/swan"]
 roblox = "build/roblox"
-lune = "build/lune"
-luau = "build/luau"
