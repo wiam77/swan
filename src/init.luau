@@ -698,6 +698,15 @@ end
 	}
 	```
 
+	```lua
+	local frame_pos = state(UDim2.fromScale(0, 0))
+	local frame : Frame = swan.create("Frame", {
+		Position = swan.tween(frame_pos, 1, "linear")
+	})
+
+	frame_pos(UDim2.fromScale(0.5, 0.5)) -- the frame's position will linearly tween to (0.5, 0.5) in 1 second
+	```
+
 	@param duration number -- How long each tween should take.
 	@param easing_fun default_easing_fun | easing_fun -- Either the name of a default easing function, or a custom one.
 ]=]
