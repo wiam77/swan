@@ -1089,8 +1089,38 @@ end
 	in the form of [Name] : Type.
 ]=]
 export type valid_instances = {
-	Part : Part,
-	Model : Model
+	UIAspectRatioConstraint : UIAspectRatioConstraint,
+	UISizeConstraint : UISizeConstraint,
+	UITextSizeConstraint : UITextSizeConstraint,
+	UICorner : UICorner,
+	UIDragDetector : UIDragDetector,
+	UIFlexItem : UIFlexItem,
+	UIGradient : UIGradient,
+	UILayout : UILayout,
+	UIGridStyleLayout : UIGridStyleLayout,
+	UIGridLayout : UIGridLayout,
+	UIListLayout : UIListLayout,
+	UIPageLayout : UIPageLayout,
+	UITableLayout : UITableLayout,
+	UIPadding : UIPadding,
+	UIScale : UIScale,
+	UIStroke : UIStroke,
+	CanvasGroup : CanvasGroup,
+	Frame : Frame,
+	ImageButton : ImageButton,
+	TextButton : TextButton,
+	GuiLabel : GuiLabel,
+	ImageLabel : ImageLabel,
+	TextLabel : TextLabel,
+	ScrollingFrame : ScrollingFrame,
+	TextBox : TextBox,
+	VideoDisplay : VideoDisplay,
+	VideoFrame : VideoFrame,
+	ViewportFrame : ViewportFrame,
+	BillboardGui : BillboardGui,
+	ScreenGui : ScreenGui,
+	AdGui : AdGui,
+	SurfaceGui : SurfaceGui
 }
 
 -- TODO: make invalid properties error
