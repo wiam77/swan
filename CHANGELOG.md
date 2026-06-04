@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- `swan.apply()`, which substitues `swan.create(Instance)`, for better DX (now, the properties table is correctly typed).
 - Usage example for `swan.tween()` in its documentation.
 
 ## [v1.1.0] - 2026-05-20

@@ -6,9 +6,6 @@ TODO:
 
 	- Remove the need for `proxy_base_hack`.
 
-	- Better signature for swan.create().
-	E.g. provide properties table and instance return type when passing class name instead of a base instance.
-
 	- When creating a state, if its variable type is annotated,
 	and the type of the value passed to swan.state() doesn't match,
 	there should be a type error:
@@ -1084,11 +1081,54 @@ local function apply_properties(instance : any, properties : {[any] : any}) : an
 end
 
 --[=[
-	@function create
+	@type valid_instances table
 	@within swan
 	@tag roblox
 
-	Creates (or clones) an Instance, applying the given properties.
+	List of valid instance types to be passed to [`swan.create`](/api/swan#create)) and [`swan.apply`](/api/swan#apply)
+	in the form of [Name] : Type.
+]=]
+export type valid_instances = {
+	Part : Part,
+	Model : Model
+}
+
+-- TODO: make invalid properties error
+--[=[
+	@type props typefunction
+	@within swan
+	@tag roblox
+
+	Typefunction which takes an Instance type and results a properties table for said Instance.
+]=]
+export type function props(instance : type) : type
+	local self = types.newtable()
+	self:setindexer(types.number, self)
+
+	while instance do
+		for k, v in instance:properties() do
+			local vr = v.read :: type
+			local vt = vr.tag
+			local t : type?
+			if vt == "function" then -- Method
+				continue
+			elseif vt == "table" then -- Event
+				t = ((vr:readproperty(types.singleton("Connect")) :: type):parameters().head :: {type})[2]
+			end
+
+			self:setproperty(k, types.optional(t or (types.unionof(vr, state(vr)))))
+		end
+
+		instance = instance:readparent() :: type
+	end
+
+	return self
+end
+
+--[=[
+	@tag roblox
+
+	Creates an Instance, applying the given properties.
 
 	Depending on the key, the properties table has the following behaviour:
 	- **Property**: either provide the value directly or a state holding it.\
@@ -1100,9 +1140,9 @@ end
 	that were removed/added to the table.
 	- **number**: a nested Properties table, useful for [components](/api/swan#component).
 
-	@param class T -- Class name or base instance
-	@param properties properties -- Table of properties to be applied to the Instance.
-	@return any -- The created Instance.
+	@param class_name T | keyof<valid_instances> -- The class name of the Instance you want to create.
+	@param properties any | props<T> -- Table of properties to be applied to the Instance.
+	@return index<valid_instances, T> -- The created Instance.
 
 	```lua
 	local bullets = state(100)
@@ -1126,10 +1166,19 @@ end
 	})
 	```
 ]=]
-swan.create = function(x, properties)
-	return apply_properties(type(x) == "string" and Instance.new(x) or x:Clone(), properties)
-end :: ((class_name : string, properties : any) -> any)
-     & (<T, U>(base : T & Instance, properties : U & {[any] : any}) -> T)
+function swan.create<T>(class_name : T | keyof<valid_instances>, properties : any | props<index<valid_instances, T>>) : index<valid_instances, T>
+	return apply_properties(Instance.new(class_name), properties)
+end
+
+--[=[
+	@function apply
+	@within swan
+	@tag roblox
+
+	Same as [`swan.create()`](/api/swan#create), except that you pass an Instance, to which the
+	passed properties will be applied, instead of creating a new one.
+]=]
+swan.apply = apply_properties :: <T>(instance : T & Instance, properties : any | props<T>) -> T
 
 --[=[
 	@tag roblox
