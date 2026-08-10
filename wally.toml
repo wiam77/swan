@@ -1,9 +1,11 @@
 [package]
 name = "wiam77/swan"
-description = "Simple state management library. Docs: https://wiam.codeberg.page/swan"
+description = "A simple state management library."
 version = "1.1.0"
-license = "GPL-3.0-or-later"
+license = "MPL-2.0"
 registry = "https://github.com/UpliftGames/wally-index"
+homepage = "https://wiam77.github.io/swan"
+repository = "https://github.com/wiam77/swan"
 realm = "shared"
 include = ["src", "src/*", "docs", "docs/*", "wally.toml", "LICENSE", "README.md", "CHANGELOG.md", "default.project.json"]
 exclude = ["**"]

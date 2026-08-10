@@ -1,0 +1,14 @@
+[suites.main]
+include = ["tests/**/*.spec.luau"]
+
+# [suites.scripts]
+# include = ["tests/scripts/**/*.spec.luau"]
+# backend = "lune"
+
+[settings]
+backend = "native"
+timeout_ms = 5000
+
+[coverage]
+exclude = ["**/!(src)/**"]
+min = 90
