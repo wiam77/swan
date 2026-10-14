@@ -75,8 +75,10 @@ end
 	end) -- the previous effect will only print "Bye, World!"
 
 	utils.batch(function()
+		text("Hello, World!")
+		text("Bye, World!")
 		text.value = "Oops"
-	end) -- be careful! If the last write operation is done through .value, the effect will also trigger! -- "Oops"
+	end) -- be careful! If the last write operation is done through .value, the effect will read that! -- "Oops"
 	```
 ]=]
 function utils.batch(fn: () -> ...unknown): ()
