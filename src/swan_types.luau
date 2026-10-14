@@ -182,5 +182,6 @@ export type function properties(instance: type): type
 end
 
 export type constructor<T = Instance> = (properties: properties<T>) -> T
+export type class_constructor<class_name> = constructor<index<instances, class_name>>
 
 return nil

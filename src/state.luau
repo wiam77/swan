@@ -4,13 +4,16 @@ const globals = require("./globals")
 const swan_types = require("./swan_types")
 const utils = require("./utils")
 
+type state<T> = swan_types.state<T>
+type proxy_state<T> = swan_types.proxy_state<T>
+
 const state = {}
 
 const effects = globals.effects
 const batched = globals.batched
 const STATE_MT = globals.STATE_MT
 
-const function mark_dirty<T>(state: swan_types.state<T>)
+const function mark_dirty<T>(state: state<T>)
 	if state.dirty then
 		return
 	end
@@ -21,7 +24,7 @@ const function mark_dirty<T>(state: swan_types.state<T>)
 	end
 end
 
-function STATE_MT.__call<T>(self: swan_types.state<T>, ...): T
+function STATE_MT.__call<T>(self: state<T>, ...): T
 	const current_value = self.value
 	const subscribers = self.subscribers
 
@@ -93,7 +96,7 @@ function STATE_MT.__call<T>(self: swan_types.state<T>, ...): T
 	return self.value :: T
 end
 
-function STATE_MT.__unm(v: swan_types.state<number>): swan_types.state<number>
+function STATE_MT.__unm(v: state<number>): state<number>
 	return (state.computed(function()
 		return -v()
 	end))
@@ -123,7 +126,19 @@ for op_name, op in globals.BINARY_OPS do
 	end
 end
 
-function state.state<T>(initial_value: T?, always_force: boolean?): swan_types.state<T>
+--[=[
+	@within swan
+
+	Creates and returns a [state](/docs/concepts#state).
+
+	```lua
+	const ammo = swan.state(100)
+	const message = swan.state("Hello, World!", true)
+
+	print(ammo(), message.value) -- 100, "Hello, World!"
+	```
+]=]
+function state.state<T>(initial_value: T?, always_force: boolean?): state<T>
 	return setmetatable({
 		value = initial_value,
 		always_force = always_force,
@@ -132,7 +147,28 @@ function state.state<T>(initial_value: T?, always_force: boolean?): swan_types.s
 	}, STATE_MT) :: any
 end
 
-function state.computed<T>(fn: (() -> T) | (() -> ())): swan_types.state<T>
+--[=[
+	@within swan
+
+	Takes the given function and
+
+	This is useful for states which depend on the value of another state, since their value will
+	be updated only when the state they depend on is also updated, and not every time it is read.
+
+	`swan` also provides [implicit computeds](/docs/concepts#implicit_computeds).
+
+	```lua
+	const stamina = swan.state(100)
+	const possible_jumps = swan.computed(function()
+		return stamina() / 50
+	end)
+
+	print(possible_jumps()) -- 2
+	stamina(50)
+	print(possible_jumps()) -- 1
+	```
+]=]
+function state.computed<T>(fn: (() -> T) | (() -> ())): state<T>
 	const self: any = setmetatable({
 		compute = fn,
 		subscribers = {},
@@ -150,7 +186,29 @@ function state.computed<T>(fn: (() -> T) | (() -> ())): swan_types.state<T>
 	return self
 end
 
-function state.proxy<T>(initial_value: T | { [any]: any }, always_force: boolean?): swan_types.proxy_state<T>
+--[=[
+	@within swan
+
+	Creates and returns a [proxy state](/docs/concepts#table-states).
+
+	```lua
+	const profile = swan.proxy {
+		name = "john",
+		age = 20,
+	}
+
+	swan.effect(function(old_profile)
+		const new_profile = profile()
+
+		if old_profile and old_profile.name ~= new_profile.name then
+			print(`{old_profile.name} changed their name to {new_profile.name}`)
+		end
+	end)
+
+	profile().name = "doe"
+	```
+]=]
+function state.proxy<T>(initial_value: T | { [any]: any }, always_force: boolean?): proxy_state<T>
 	const self: any = setmetatable({
 		always_force = always_force,
 		subscribers = {},

@@ -7,7 +7,8 @@ const swan_types = require("./swan_types")
 const utils = require("./utils")
 
 type state<T = unknown> = swan_types.state
-type class_constructor<class_name> = swan_types.constructor<index<swan_types.instances, class_name>>
+type constructor<T = Instance> = swan_types.constructor<T>
+type class_constructor<class_name> = swan_types.class_constructor<class_name>
 
 const roblox = {}
 if not globals.wait then
@@ -101,7 +102,7 @@ const function apply<T>(instance: T & Instance, properties: swan_types.propertie
 	return instance
 end
 
-function roblox.apply<T>(instance: T | Instance): swan_types.constructor<T>
+function roblox.apply<T>(instance: T | Instance): constructor<T>
 	return function(properties: swan_types.properties<T>)
 		return apply(instance, properties)
 	end
@@ -118,7 +119,7 @@ function roblox.create<T>(class_name: T | swan_types.class_name): class_construc
 		return apply<<T>>(instance, properties)
 	end
 
-	constructor_cache[class_name] = constructor :: swan_types.constructor
+	constructor_cache[class_name] = constructor :: constructor
 	return constructor
 end
 
