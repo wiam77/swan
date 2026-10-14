@@ -117,7 +117,9 @@ end
 	const not_a_computed = "Hey"
 	print(utils.is_computed(not_a_computed)) -- false
 
-	const a_computed = swan.computed("Cool")
+	const a_computed = swan.computed(function()
+		return "Cool"
+	end)
 	print(utils.is_computed(a_computed)) -- true
 	```
 ]=]
