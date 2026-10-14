@@ -126,10 +126,11 @@ function roblox.component<T, U...>(fn: (U...) -> T & Instance): (U...) -> T
 	return function(...: U...): T
 		const args: { any } = { ... }
 		local instance: Instance
-		instance.Destroying:Connect(scope(function()
+		const disconnecter = scope(function()
 			instance = fn(table.unpack(args))
-		end))
+		end)
 
+		instance.Destroying:Connect(disconnecter)
 		return instance :: T
 	end
 end
