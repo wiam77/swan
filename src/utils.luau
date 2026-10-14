@@ -120,6 +120,7 @@ end
 	const a_computed = swan.computed(function()
 		return "Cool"
 	end)
+
 	print(utils.is_computed(a_computed)) -- true
 	```
 ]=]
@@ -177,7 +178,7 @@ end
 	}
 
 	print(todos(), todos()[1]) -- {}, "go outside"
-	print(swan.get_real(todos())) --[[ {
+	print(utils.get_real(todos())) --[[ {
 		"go outside",
 		"touch grass",
 		"write more todos"
@@ -208,11 +209,11 @@ end
 	money(100) -- "Your money: 100", "Your health: 50", "Your money (again): 100"
 	health(50) -- "Your money: 100", "Your health: 50"
 
-	swan.clear(health)
+	utils.clear(health)
 	health(200) -- *crickets*
 	money(50) -- "Your money: 50", "Your health: 200", "Your money (again): 50"
 
-	swan.clear()
+	utils.clear()
 	money(10) -- *crickets*
 	```
 ]=]
