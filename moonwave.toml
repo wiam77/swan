@@ -1,4 +1,4 @@
-gitRepoUrl = false # gotta do this to remove the github button on the navbar
+gitRepoUrl = false
 gitSourceBranch = "main"
 
 apiCategories = [
@@ -32,12 +32,12 @@ bannerImage = "banner.svg"
 
 [[home.features]]
 title = "Simple"
-description = "Written in a single file of pure Luau (runtime-agnostic), you can use it anywhere"
+description = "Written in pure Luau (runtime-agnostic), you can use it anywhere"
 
 [[home.features]]
 title = "Reactive"
-description = "Use states and effects to automatically react to changes"
+description = "Use states, computeds and effects to automatically react to changes"
 
 [[home.features]]
 title = "Great DX"
-description = "With its type-safe and ergonomic API, swan provides great developer experience"
+description = "With its type-safe and ergonomic API, it provides great developer experience"
