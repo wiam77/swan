@@ -1,22 +1,24 @@
 --!strict
 
-local globals = require("./globals")
-local swan_types = require("./swan_types")
+const globals = require("./globals")
+const swan_types = require("./swan_types")
 
-local function noop(): () end
+const effects = globals.effects
 
+const function noop(): () end
 return function<T, U...>(callback: swan_types.callback<T, U...>): swan_types.disconnecter
-	globals.current_callback = {
-		value = callback,
-		previous = globals.current_callback,
+	const previous_tracker = globals.current_tracker
+	effects[callback] = 0
+	globals.current_tracker = {
+		data = callback,
+		previous = previous_tracker,
 	}
 
-	globals.EFFECTS[callback] = 0
-	local cleanup_data = { callback() }
-	globals.current_callback = (globals.current_callback :: swan_types.callback_node).previous
+	const cleanup_data = { callback() }
+	globals.current_tracker = previous_tracker
 
 	local function disconnecter()
-		globals.EFFECTS[callback] = nil
+		effects[callback] = nil
 		disconnecter = noop
 	end
 
@@ -24,7 +26,7 @@ return function<T, U...>(callback: swan_types.callback<T, U...>): swan_types.dis
 		return disconnecter
 	end
 
-	local cleanup: any = cleanup_data[1]
+	const cleanup: any = cleanup_data[1]
 	if not cleanup :: any then
 		return disconnecter
 	end
@@ -36,7 +38,7 @@ return function<T, U...>(callback: swan_types.callback<T, U...>): swan_types.dis
 	end
 
 	if globals.current_scope then
-		table.insert(globals.current_scope.disconnecters, maid)
+		table.insert(globals.current_scope.data, maid)
 	end
 
 	return maid

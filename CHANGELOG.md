@@ -7,7 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `swan.apply()`, which substitues `swan.create(Instance)`, for better DX (now, the properties table is correctly typed).
+- Color3 to animatable data types.
 - Usage example for `swan.tween()` in its documentation.
+- Test suite (using [Lest](https://github.com/lest-luau/lest)).
+- `swan.utils.is_computed()`.
+
+### Changed
+- `swan.state` now provides types (with some limitations) for implicit computeds.
+- Make binary implicit computeds support both operands as states.
+- `swan.proxy_state()` -> `swan.proxy()`.
+- `state.callbacks` -> `state.subscribers`.
+- `swan.derived()` -> `swan.computed()`.
+- Made computed states a primitive construct (they were previously an effect wrapper)
+- Made computed states pull-based.
+- License from GPLv3 to MPL-2.0.
+- Split the library across multiple files.
+
+### Removed
+- `utils.state_get_real()`.
+- `utils.branch()`.
 
 ## [v1.1.0] - 2026-05-20
 ### Added

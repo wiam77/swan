@@ -1,9 +1,8 @@
 --!strict
 
-local swan_types = require("./swan_types")
+const swan_types = require("./swan_types")
 
-local easing = {}
-
+const easing = {}
 easing.powers = {
 	linear = 1,
 	quadratic = 2,
@@ -15,11 +14,11 @@ easing.powers = {
 	bounce = 2,
 }
 
-local function vector_decomposer(v)
+const function vector_decomposer(v)
 	return { v.X, v.Y, v.Z }
 end
 
-local component_handlers: any = { -- {[1] = decomposeer, [2] = recomposer}
+const component_handlers: any = { -- {[1] = decomposeer, [2] = recomposer}
 	number = {
 		function(v)
 			return { v }
@@ -124,8 +123,8 @@ easing.defaults = {
 			return b
 		end
 
-		local p = 0.3
-		local eased = 2 ^ (-10 * t) * math.sin((t - p / 4) * (2 * math.pi) / p) + 1
+		const p = 0.3
+		const eased = 2 ^ (-10 * t) * math.sin((t - p / 4) * (2 * math.pi) / p) + 1
 
 		return a + (b - a) * eased
 	end,
@@ -143,10 +142,10 @@ easing.defaults = {
 } :: { [swan_types.default_easing_fn]: swan_types.easing_fn }
 
 function easing.apply<T>(start_value: T, goal_value: T, t: number, easing_fn: swan_types.easing_fn, data_type: string): any
-	local handlers = component_handlers[data_type]
-	local decomposer = handlers[1]
-	local start_components = decomposer(start_value)
-	local goal_components = decomposer(goal_value)
+	const handlers = component_handlers[data_type]
+	const decomposer = handlers[1]
+	const start_components = decomposer(start_value)
+	const goal_components = decomposer(goal_value)
 
 	for k, v in start_components do
 		goal_components[k] = easing_fn(v, goal_components[k], t)

@@ -1,76 +1,125 @@
 --!strict
 
-local effect = require("./effect")
-local globals = require("./globals")
-local swan_types = require("./swan_types")
-local utils = require("./utils")
+const globals = require("./globals")
+const swan_types = require("./swan_types")
+const utils = require("./utils")
 
-local state = {}
+const state = {}
 
-function globals.STATE_MT.__call<T>(self: swan_types.state<T>, ...): T
-	local old_value = self.value
-	local callbacks = self.callbacks
+const effects = globals.effects
+const batched = globals.batched
+const STATE_MT = globals.STATE_MT
 
-	local args = { ... }
-	local argsn = select("#", ...)
+const function mark_dirty<T>(state: swan_types.state<T>)
+	if state.dirty then
+		return
+	end
+
+	state.dirty = true
+	for dependent in state.dependents do
+		mark_dirty(dependent)
+	end
+end
+
+function STATE_MT.__call<T>(self: swan_types.state<T>, ...): T
+	const current_value = self.value
+	const subscribers = self.subscribers
+
+	const args = { ... }
+	const args_n = select("#", ...)
 	local new_value: T? = args[1]
-	local force: boolean? = args[2]
-	local always_force = self.always_force
+	const force: boolean? = args[2]
+	const always_force = self.always_force
 
-	if argsn == 0 then -- if reading (state())
-		local cc = globals.current_callback and globals.current_callback.value
-		if cc and not callbacks[cc] then -- if within effect and not already registered to it
-			globals.EFFECTS[cc] += 1
-			callbacks[cc] = globals.EFFECTS[cc]
+	if args_n == 0 then
+		const current_tracker = globals.current_tracker
+		if current_tracker then
+			const data: any = current_tracker.data
+			const data_type = type(data)
+			if data_type == "function" and not subscribers[data] then
+				effects[data] += 1
+				subscribers[data] = effects[data]
+			else
+				const dependents = self.dependents
+				if not dependents[data] then
+					dependents[data] = true
+				end
+			end
 		end
-	elseif old_value ~= new_value or (always_force and force ~= false) or force then -- if writing (state(v))
-		if utils.is_proxy(old_value) then
-			new_value = utils.make_proxy(new_value, self)
-		end
-		self.value = new_value
 
-		for callback, state_i in callbacks do
-			if not globals.EFFECTS[callback] then
-				callbacks[callback] = nil
+		const compute = self.compute
+		if not (compute and self.dirty) then
+			return current_value
+		end
+
+		self.dirty = false
+		self(compute())
+	elseif current_value ~= new_value or (always_force and force ~= false) or force then
+		if utils.is_proxy(current_value) then
+			new_value = utils.make_proxy(new_value, self) :: T
+		end
+
+		self.value = new_value :: T
+		for dependent in self.dependents do
+			mark_dirty(self)
+		end
+
+		for callback, state_i in subscribers do
+			if not effects[callback] then
+				subscribers[callback] = nil
 				continue
 			end
 
-			if globals.batching then
-				local state_batch = globals.BATCHED[self]
-				if state_batch then
-					local x = state_batch[1]
-					if not x[callback] then
-						x[callback] = true
-					end
-
-					state_batch[2] = old_value
-				else
-					globals.BATCHED[self] = { { [callback] = true }, old_value, state_i }
-				end
-			else
-				callback(old_value, state_i)
+			if not globals.batching then
+				callback(current_value, state_i)
+				continue
 			end
+
+			const state_batch = batched[self]
+			if not state_batch then
+				batched[self] = { { [callback] = true }, current_value, state_i }
+				continue
+			end
+
+			const x = state_batch[1]
+			if not x[callback] then
+				x[callback] = true
+			end
+
+			state_batch[2] = current_value
 		end
 	end
 
-	return self.value
+	return self.value :: T
 end
 
-function globals.STATE_MT.__unm(v: swan_types.state<number>): swan_types.state<number>
-	return (state.derived(function()
+function STATE_MT.__unm(v: swan_types.state<number>): swan_types.state<number>
+	return (state.computed(function()
 		return -v()
 	end))
 end
 
 for op_name, op in globals.BINARY_OPS do
-	globals.STATE_MT["__" .. op_name] = function(a: any, b: any)
-		return state.derived(if utils.is_state(a)
-			then function()
+	STATE_MT["__" .. op_name] = function<T>(a: any, b: any)
+		local fn: () -> T
+
+		const a_is_state = utils.is_state(a)
+		const b_is_state = utils.is_state(b)
+		if a_is_state and not b_is_state then
+			fn = function()
 				return op(a(), b)
 			end
-			else function()
+		elseif b_is_state and not a_is_state then
+			fn = function()
 				return op(a, b())
-			end)
+			end
+		else
+			fn = function()
+				return op(a(), b())
+			end
+		end
+
+		return state.computed(fn)
 	end
 end
 
@@ -78,15 +127,38 @@ function state.state<T>(initial_value: T?, always_force: boolean?): swan_types.s
 	return setmetatable({
 		value = initial_value,
 		always_force = always_force,
-		callbacks = {},
-	}, globals.STATE_MT) :: any
+		subscribers = {},
+		dependents = {},
+	}, STATE_MT) :: any
 end
 
-function state.derived<T>(f: (() -> T) | (() -> ())): (swan_types.state<T>, swan_types.disconnecter)
-	local s = state.state()
-	return s, effect(function()
-		s(f())
-	end)
+function state.computed<T>(fn: (() -> T) | (() -> ())): (swan_types.state<T>, swan_types.disconnecter)
+	const self: any = setmetatable({
+		compute = fn,
+		subscribers = {},
+		dependents = {},
+	}, STATE_MT)
+
+	const previous_tracker = globals.current_tracker
+	globals.current_tracker = {
+		data = self,
+		previous = previous_tracker,
+	}
+
+	self.value = fn()
+	globals.current_tracker = previous_tracker
+	return self
+end
+
+function state.proxy<T>(initial_value: T | { [any]: any }, always_force: boolean?): swan_types.proxy_state<T>
+	const self: any = setmetatable({
+		always_force = always_force,
+		subscribers = {},
+		dependents = {},
+	}, STATE_MT)
+
+	self.value = utils.make_proxy(initial_value, self)
+	return self
 end
 
 return state

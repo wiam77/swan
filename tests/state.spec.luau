@@ -18,11 +18,10 @@ describe("state (constructor)", function()
 end)
 
 describe("state (object)", function()
-	local test_state_a: swan.state
-	local test_state_b: swan.state
+	local test_state_a: swan.state<string>
+	local test_state_b: swan.state<string>
 	const test_value_a = "initial value"
 	const test_value_b = "new value"
-	const test_value_c = test_value_a .. test_value_b
 
 	beforeEach(function()
 		test_state_a = state(test_value_a)
@@ -45,19 +44,50 @@ describe("state (object)", function()
 	end)
 
 	it("is always forceable", function()
-		expect(test_state_a.always_force).toBe(false)
+		expect(test_state_a.always_force).toBeFalsy()
 	end)
 
-	it("overloads (implicitly derived state)", function()
-		describe("string", function()
-			it("concatenation", function()
-				const test_state_c = test_state_a .. test_state_b
-				expect(test_state_c.value).toBe(test_value_c)
-			end)
+	describe("overloads (implicitly computed state)", function()
+		it("string concatenation", function()
+			const test_state_c = test_state_a .. test_state_b
+			expect(test_state_c.value).toBe(test_value_a .. test_value_b)
 		end)
 
 		describe("math", function()
-			it("addition", function() end)
+			const test_number = 10
+			const number_state = state(test_number)
+
+			it("negation", function()
+				expect((-number_state)()).toBe(-test_number)
+			end)
+
+			it("addition", function()
+				expect((number_state + number_state)()).toBe(test_number + test_number)
+			end)
+
+			it("subtraction", function()
+				expect((number_state - number_state)()).toBe(test_number - test_number)
+			end)
+
+			it("multiplication", function()
+				expect((number_state * 4)()).toBe(test_number * 4)
+			end)
+
+			it("division", function()
+				expect((number_state / 4)()).toBe(test_number / 4)
+			end)
+
+			it("floor division", function()
+				expect((number_state // 3)()).toBe(test_number // 3)
+			end)
+
+			it("modulo", function()
+				expect((number_state % 3)()).toBe(test_number % 3)
+			end)
+
+			it("power", function()
+				expect((number_state ^ 3)()).toBe(test_number ^ 3)
+			end)
 		end)
 	end)
 end)

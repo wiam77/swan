@@ -1,19 +1,19 @@
 --!strict
 
-local swan_types = require("./swan_types")
+const swan_types = require("./swan_types")
 
 return {
 	wait = nil :: ((number?) -> number)?,
 
-	current_callback = nil :: swan_types.callback_node?,
+	current_tracker = nil :: swan_types.node<swan_types.callback | swan_types.state>?,
 	current_scope = nil :: swan_types.scope_node?,
 
+	effects = {} :: { [swan_types.callback]: number },
+
 	batching = false :: boolean,
-	BATCHED = {} :: { [swan_types.state]: { any } }, -- {[state] : {[1] : {[callback] = true}, [2] : old_value, [3] : state_i}}
+	batched = {} :: { [swan_types.state]: { any } }, -- {[state] : {[1] : {[callback] = true}, [2] : old_value, [3] : state_i}}
 
 	STATE_MT = {} :: { [string]: any },
-
-	EFFECTS = {} :: { [swan_types.callback]: number },
 
 	--[=[
 		@prop SWAN_PROXY_ID string

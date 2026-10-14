@@ -1,12 +1,12 @@
 --!strict
 
-local fs = require("@lune/fs")
-local serde = require("@lune/serde")
+const fs = require("@lune/fs")
+const serde = require("@lune/serde")
 
-local TARGETS = { "luau", "lune", "roblox" }
-local INCLUDES = { "src", "LICENSE", "README.md", "docs" }
+const TARGETS = { "luau", "lune", "roblox" }
+const INCLUDES = { "src", "LICENSE", "README.md", "docs" }
 
-local BASE_MANIFEST = fs.readFile("base_pesde.toml")
+const BASE_MANIFEST = fs.readFile("base_pesde.toml")
 
 if fs.isDir("build") then
 	fs.removeDir("build")
@@ -15,7 +15,7 @@ end
 fs.writeDir("build")
 
 for _, target in TARGETS do
-	local out_dir = "build/" .. target
+	const out_dir = "build/" .. target
 	fs.writeDir(out_dir)
 
 	for _, include in INCLUDES do

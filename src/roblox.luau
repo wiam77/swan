@@ -1,22 +1,22 @@
 --!strict
 
-local effect = require("./effect")
-local globals = require("./globals")
-local scope = require("./scope")
-local swan_types = require("./swan_types")
-local utils = require("./utils")
+const effect = require("./effect")
+const globals = require("./globals")
+const scope = require("./scope")
+const swan_types = require("./swan_types")
+const utils = require("./utils")
 
 type state<T = unknown> = swan_types.state
 type class_constructor<class_name> = swan_types.constructor<index<swan_types.instances, class_name>>
 
-local roblox = {}
+const roblox = {}
 if not globals.wait then
 	globals.wait = task.wait
 end
 
-local constructor_cache: { [swan_types.class_name]: swan_types.constructor } = {}
+const constructor_cache: { [swan_types.class_name]: swan_types.constructor } = {}
 
-local function implicit_effect(instance: Instance, value: any, action: (...any) -> ()): any
+const function implicit_effect(instance: Instance, value: any, action: (...any) -> ()): any
 	if utils.is_state(value) then
 		return effect(function(old)
 			action(value(), old)
@@ -26,8 +26,8 @@ local function implicit_effect(instance: Instance, value: any, action: (...any) 
 	return action(value)
 end
 
-local function apply<T>(instance: T & Instance, properties: swan_types.properties<T>): T
-	local nested_props = {}
+const function apply<T>(instance: T & Instance, properties: swan_types.properties<T>): T
+	const nested_props = {}
 	for property_name, value in properties :: any do
 		if property_name == "Children" then
 			implicit_effect(instance, value, function(value: any, old)
@@ -65,7 +65,7 @@ local function apply<T>(instance: T & Instance, properties: swan_types.propertie
 		end
 
 		if type(property_name) == "number" then
-			local value_t = type(value)
+			const value_t = type(value)
 			assert(value_t == "table", `Expected a table (properties) for index {property_name}, got a "{value_t}!"`)
 			table.insert(nested_props, value)
 			continue
@@ -73,13 +73,13 @@ local function apply<T>(instance: T & Instance, properties: swan_types.propertie
 
 		instance = instance :: any
 
-		local exists, property = pcall(function()
+		const exists, property = pcall(function()
 			return instance[property_name]
 		end)
 
 		assert(exists, `Property '{property_name}' doesn't exist for class '{instance.ClassName}!'`)
 
-		local success, is_event = pcall(function()
+		const success, is_event = pcall(function()
 			return property and property.Connect
 		end)
 
@@ -113,7 +113,7 @@ function roblox.create<T>(class_name: T | swan_types.class_name): class_construc
 		return constructor
 	end
 
-	local instance = Instance.new(class_name)
+	const instance = Instance.new(class_name)
 	constructor = function(properties: swan_types.properties<T>)
 		return apply<<T>>(instance, properties)
 	end
@@ -122,12 +122,12 @@ function roblox.create<T>(class_name: T | swan_types.class_name): class_construc
 	return constructor
 end
 
-function roblox.component<T, U...>(f: (U...) -> T & Instance): (U...) -> T
+function roblox.component<T, U...>(fn: (U...) -> T & Instance): (U...) -> T
 	return function(...: U...): T
-		local args: { any } = { ... }
+		const args: { any } = { ... }
 		local instance: Instance
 		instance.Destroying:Connect(scope(function()
-			instance = f(table.unpack(args))
+			instance = fn(table.unpack(args))
 		end))
 
 		return instance :: T

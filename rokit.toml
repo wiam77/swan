@@ -1,5 +1,5 @@
 [tools]
 wally = "UpliftGames/wally@0.3.2"
-rojo = "rojo-rbx/rojo@7.7.0"
-lune = "lune-org/lune@0.10.5"
-lest = "lest-luau/lest@0.5.0"
+rojo = "rojo-rbx/rojo@7.7.1"
+lune = "lune-org/lune@0.11.0"
+lest = "lest-luau/lest@0.6.1"

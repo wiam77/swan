@@ -1,10 +1,10 @@
 --!strict
 
-local easing = require("./easing")
-local effect = require("./effect")
-local globals = require("./globals")
-local state = require("./state")
-local swan_types = require("./swan_types")
+const easing = require("./easing")
+const effect = require("./effect")
+const globals = require("./globals")
+const state = require("./state")
+const swan_types = require("./swan_types")
 
 return function<T>(
 	target: swan_types.state<T & swan_types.animatable>,
@@ -17,23 +17,23 @@ return function<T>(
 		on_complete: () -> ()?,
 	}?
 ): swan_types.state<T>
-	local wait = globals.wait
+	const wait = globals.wait
 	assert(wait, "The wait function (swan.wait) was not provided.")
 
 	globals.wait = globals.wait :: (number?) -> number
 	easing_fn = (easing.defaults[easing_fn :: swan_types.default_easing_fn] or easing_fn :: swan_types.easing_fn) :: any
 
-	local target_value = target.value
-	local data_type = typeof(target_value)
-	local tweened = state.state(target_value)
+	const target_value = target.value
+	const data_type = typeof(target_value)
+	const tweened = state.state(target_value)
 
-	local opts = options or {} :: any
-	local easing_dir: swan_types.easing_dir? = opts.easing_dir
-	local easing_power: number = (easing.powers :: any)[easing_fn] -- should be `number?`
+	const opts = options or {} :: any
+	const easing_dir: swan_types.easing_dir? = opts.easing_dir
+	const easing_power: number = (easing.powers :: any)[easing_fn] -- should be `number?`
 
 	local first = true
 	effect(function()
-		local goal = target()
+		const goal = target()
 		if first then
 			first = false
 			return
@@ -43,9 +43,9 @@ return function<T>(
 			wait(opts.delay)
 		end
 
-		local start_value = tweened.value
+		const start_value = tweened.value
 		for current_bounce = 0, opts.bounces or 0 do
-			local start_time = os.clock()
+			const start_time = os.clock()
 			local progress = 0
 
 			while progress < 1 do
