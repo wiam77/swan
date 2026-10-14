@@ -132,7 +132,7 @@ function state.state<T>(initial_value: T?, always_force: boolean?): swan_types.s
 	}, STATE_MT) :: any
 end
 
-function state.computed<T>(fn: (() -> T) | (() -> ())): (swan_types.state<T>, swan_types.disconnecter)
+function state.computed<T>(fn: (() -> T) | (() -> ())): swan_types.state<T>
 	const self: any = setmetatable({
 		compute = fn,
 		subscribers = {},
