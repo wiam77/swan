@@ -150,10 +150,11 @@ end
 --[=[
 	@within swan
 
-	Takes the given function and
+	Takes the given function and collects its dependencies (states), just like effects,
+	creating a state whose value will be the result of the function.
+	Recomputations are only done once a dependency changes, and once the state is read (pulling).
 
-	This is useful for states which depend on the value of another state, since their value will
-	be updated only when the state they depend on is also updated, and not every time it is read.
+	Returns the created state.
 
 	`swan` also provides [implicit computeds](/docs/concepts#implicit_computeds).
 
