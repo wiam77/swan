@@ -206,7 +206,7 @@ end
 		print("Your money (again):", money())
 	end)
 
-	money(100) -- "Your money: 100", "Your health: 50", "Your money (again): 100"
+	money(100) -- "Your money: 100", "Your health: 100", "Your money (again): 100"
 	health(50) -- "Your money: 100", "Your health: 50"
 
 	utils.clear(health)
