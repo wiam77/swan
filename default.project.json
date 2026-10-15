@@ -1,6 +1,17 @@
 {
-  "name": "swan",
+  "name": "swan test",
   "tree": {
-    "$path": "src"
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Packages": {
+        "$className": "Folder",
+        "swan": {
+          "$path": "src"
+        }
+      },
+      "tests": {
+        "$path": "tests/roblox"
+      }
+    }
   }
 }

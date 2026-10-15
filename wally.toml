@@ -7,5 +7,5 @@ registry = "https://github.com/UpliftGames/wally-index"
 homepage = "https://wiam.codeberg.page/swan"
 repository = "https://codeberg.org/wiam/swan"
 realm = "shared"
-include = ["src", "src/*", "docs", "docs/*", "wally.toml", "LICENSE", "README.md", "CHANGELOG.md", "default.project.json"]
+include = ["src", "src/*", "docs", "docs/*", "wally.toml", "LICENSE", "README.md", "CHANGELOG.md", "build.project.json"]
 exclude = ["**"]

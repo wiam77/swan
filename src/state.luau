@@ -4,7 +4,7 @@ const globals = require("./globals")
 const swan_types = require("./swan_types")
 const utils = require("./utils")
 
-type state<T> = swan_types.state<T>
+type state<T = unknown> = swan_types.state<T>
 type proxy_state<T> = swan_types.proxy_state<T>
 
 const state = {}
@@ -38,11 +38,11 @@ function STATE_MT.__call<T>(self: state<T>, ...): T
 		const current_tracker = globals.current_tracker
 		if current_tracker then
 			const data: any = current_tracker.data
-			const data_type = type(data)
-			if data_type == "function" and not subscribers[data] then
+			const is_effect = type(data) == "function"
+			if is_effect and not subscribers[data] then
 				effects[data] += 1
 				subscribers[data] = effects[data]
-			else
+			elseif not is_effect then
 				const dependents = self.dependents
 				if not dependents[data] then
 					dependents[data] = true
@@ -138,7 +138,7 @@ end
 	print(ammo(), message.value) -- 100, "Hello, World!"
 	```
 ]=]
-function state.state<T>(initial_value: T?, always_force: boolean?): state<T>
+function state.state<T>(initial_value: T, always_force: boolean?): state<T>
 	return setmetatable({
 		value = initial_value,
 		always_force = always_force,

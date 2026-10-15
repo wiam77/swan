@@ -3,8 +3,6 @@
 const swan_types = require("./swan_types")
 
 return {
-	wait = nil :: ((number?) -> number)?,
-
 	current_tracker = nil :: swan_types.node<swan_types.callback | swan_types.state>?,
 	current_scope = nil :: swan_types.scope_node?,
 

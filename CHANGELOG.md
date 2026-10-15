@@ -13,17 +13,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `swan.utils.is_computed()`.
 
 ### Changed
-- `swan.state` now provides types (with some limitations) for implicit computeds.
-- Make binary implicit computeds support both operands as states.
-- `swan.proxy_state()` -> `swan.proxy()`.
-- `state.callbacks` -> `state.subscribers`.
+- Reworked tweening system to use Roblox's TweenService.
+- Made `swan.tween()` accept an initial_value.
+- Made `swan.tween()` accept a raw target value (as in, not a state), for "one-shot" tweens.
 - `swan.derived()` -> `swan.computed()`.
 - Made computed states a primitive construct (they were previously an effect wrapper)
 - Made computed states pull-based.
+- Make binary implicit computeds support both operands as states.
+- `swan.state` now provides types (with some limitations) for implicit computeds.
+- `swan.proxy_state()` -> `swan.proxy()`.
+- `state.callbacks` -> `state.subscribers`.
 - License from GPLv3 to MPL-2.0.
 - Split the library across multiple files.
 
 ### Removed
+- A bunch of internal types from the external API (now only `state` and `proxy_state` are available).
+- `swan.wait()`.
 - `utils.state_get_real()`.
 - `utils.branch()`.
 

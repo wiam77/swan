@@ -5,6 +5,9 @@ const swan_types = require("./swan_types")
 
 --- @class utils
 
+type state<T = unknown> = swan_types.state<T>
+type proxy_base<T> = swan_types.proxy_base_hack<T>
+
 const utils = {}
 
 const effects = globals.effects
@@ -23,7 +26,7 @@ const function deep_clone<K, V>(t: { [K]: V }): { [K]: V }
 	return clone
 end
 
-function utils.make_proxy(real: any, state: swan_types.state, root_old: any, self_old: any): ...unknown
+function utils.make_proxy(real: any, state: state, root_old: any, self_old: any): ...unknown
 	if type(real) ~= "table" or utils.is_proxy(real) then
 		return real
 	end
@@ -186,7 +189,7 @@ end
 	]]--
 	```
 ]=]
-function utils.get_real<T>(proxy: swan_types.proxy_base_hack<T>): T
+function utils.get_real<T>(proxy: proxy_base<T>): T
 	return (getmetatable(proxy) :: any)[globals.SWAN_REAL_ID]
 end
 
@@ -217,7 +220,7 @@ end
 	money(10) -- *crickets*
 	```
 ]=]
-function utils.clear<T>(state: swan_types.state<T>?): ()
+function utils.clear<T>(state: state<T>?): ()
 	table.clear(state and state.subscribers or effects)
 end
 
