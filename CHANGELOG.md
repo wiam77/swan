@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Color3 to animatable data types.
 - Usage example for `swan.tween()` in its documentation.
 - Test suite (using [Lest](https://github.com/lest-luau/lest)).
-- `swan.utils.is_computed()`.
+- `utils.is_computed()` and `utils.is_effect()`.
 
 ### Changed
 - Reworked tweening system to use Roblox's TweenService.
@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `swan.state` now provides types (with some limitations) for implicit computeds.
 - `swan.proxy_state()` -> `swan.proxy()`.
 - `state.callbacks` -> `state.subscribers`.
+- Moved `utils.make_proxy()` to the internal `state` module.
+- Made `swan.scope()` pass subsequent arguments into the given function.
 - License from GPLv3 to MPL-2.0.
 - Split the library across multiple files.
 

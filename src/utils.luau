@@ -13,55 +13,6 @@ const utils = {}
 const effects = globals.effects
 const batched = globals.batched
 
-const function deep_clone<K, V>(t: { [K]: V }): { [K]: V }
-	if type(t) ~= "table" then
-		return t
-	end
-
-	const clone: any = {}
-	for k, v: any in t do
-		clone[k] = deep_clone(v)
-	end
-
-	return clone
-end
-
-function utils.make_proxy(real: any, state: state, root_old: any, self_old: any): ...unknown
-	if type(real) ~= "table" or utils.is_proxy(real) then
-		return real
-	end
-
-	if not root_old then
-		root_old = deep_clone(real)
-		self_old = root_old
-	end
-
-	const proxified = {}
-	for k, v in real do
-		proxified[k] = utils.make_proxy(v, state, root_old, self_old[k])
-	end
-
-	const subscribers = state.subscribers
-	return setmetatable({}, {
-		[globals.SWAN_PROXY_ID] = true,
-		[globals.SWAN_REAL_ID] = real,
-		__index = proxified,
-		__newindex = function(_, k, v)
-			if proxified[k] == v and not state.always_force then
-				return
-			end
-			proxified[k] = v
-			real[k] = v
-
-			for callback, state_i in subscribers do
-				(callback)(root_old, state_i)
-			end
-
-			self_old[k] = v
-		end,
-	})
-end
-
 --[=[
 	Batches any state write operation up until the given function is done running.
 

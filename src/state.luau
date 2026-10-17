@@ -24,6 +24,55 @@ const function mark_dirty<T>(state: state<T>)
 	end
 end
 
+const function deep_clone<K, V>(t: { [K]: V }): { [K]: V }
+	if type(t) ~= "table" then
+		return t
+	end
+
+	const clone: any = {}
+	for k, v: any in t do
+		clone[k] = deep_clone(v)
+	end
+
+	return clone
+end
+
+const function make_proxy(real: any, state: state, root_old: any, self_old: any): ...unknown
+	if type(real) ~= "table" or utils.is_proxy(real) then
+		return real
+	end
+
+	if not root_old then
+		root_old = deep_clone(real)
+		self_old = root_old
+	end
+
+	const proxified = {}
+	for k, v in real do
+		proxified[k] = make_proxy(v, state, root_old, self_old[k])
+	end
+
+	const subscribers = state.subscribers
+	return setmetatable({}, {
+		[globals.SWAN_PROXY_ID] = true,
+		[globals.SWAN_REAL_ID] = real,
+		__index = proxified,
+		__newindex = function(_, k, v)
+			if proxified[k] == v and not state.always_force then
+				return
+			end
+			proxified[k] = v
+			real[k] = v
+
+			for callback, state_i in subscribers do
+				(callback)(root_old, state_i)
+			end
+
+			self_old[k] = v
+		end,
+	})
+end
+
 function STATE_MT.__call<T>(self: state<T>, ...): T
 	const current_value = self.value
 	const subscribers = self.subscribers
@@ -59,7 +108,7 @@ function STATE_MT.__call<T>(self: state<T>, ...): T
 		self(compute())
 	elseif current_value ~= new_value or (always_force and force ~= false) or force then
 		if utils.is_proxy(current_value) then
-			new_value = utils.make_proxy(new_value, self) :: T
+			new_value = make_proxy(new_value, self) :: T
 		end
 
 		self.value = new_value :: T
@@ -216,7 +265,7 @@ function state.proxy<T>(initial_value: T | { [any]: any }, always_force: boolean
 		dependents = {},
 	}, STATE_MT)
 
-	self.value = utils.make_proxy(initial_value, self)
+	self.value = make_proxy(initial_value, self)
 	return self
 end
 
