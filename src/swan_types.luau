@@ -227,7 +227,7 @@ export type function properties(instance: type): type
 	self:setindexer(types.number, self)
 
 	while instance do
-		for property_field, p in instance:properties() do
+		for property_key, p in instance:properties() do
 			const property = p.read or p.write :: type
 			const property_type = property.tag
 			if property_type == "function" then
@@ -240,7 +240,7 @@ export type function properties(instance: type): type
 				callback = (connector:parameters().head :: { type })[2]
 			end
 
-			self:setproperty(property_field, implicit_property(callback, property))
+			self:setproperty(property_key, implicit_property(callback, property))
 		end
 
 		instance = instance:readparent() :: type
