@@ -132,7 +132,6 @@ function utils.is_computed<T>(v: T): boolean
 end
 
 --[=[
-
 	Returns whether the given value is a proxy.
 
 	```lua
@@ -147,11 +146,10 @@ end
 ]=]
 function utils.is_proxy<T>(v: T): boolean
 	const mt = getmetatable(v)
-	return mt and (mt :: any)[globals.SWAN_PROXY_ID] or false
+	return if mt then (mt :: any)[globals.SWAN_PROXY_ID] else false
 end
 
 --[=[
-
 	Returns whether the given value is a state holding a proxy.
 
 	```lua
@@ -167,7 +165,7 @@ end
 	```
 ]=]
 function utils.is_proxy_state<T>(v: T): boolean
-	return utils.is_state(v) and utils.is_proxy((v :: any).value) or false
+	return if utils.is_state(v) then utils.is_proxy((v :: any).value) else false
 end
 
 --[=[
@@ -191,6 +189,23 @@ end
 ]=]
 function utils.get_real<T>(proxy: proxy_base<T>): T
 	return (getmetatable(proxy) :: any)[globals.SWAN_REAL_ID]
+end
+
+--[=[
+	Returns whether the given value is a callback bound to an effect.
+
+	```lua
+	const callback = function() end
+
+	print(swan.utils.is_effect(callback)) -- false
+
+	swan.effect(callback)
+
+	print(swan.utils.is_effect(callback)) -- true
+	```
+]=]
+function utils.is_effect<T>(v: T): boolean
+	return if effects[v] then true else false
 end
 
 --[=[
