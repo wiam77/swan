@@ -14,8 +14,10 @@ const swan = {}
 	and returns an "omni-disconnecter" which calls all of them.
 	Works with nested effects and scopes too.
 
+	Arguments after the function will be passed to it.
+
 	```lua
-	const root = scope(function()
+	const root = scope(function(message)
 		effect(function()
 			effect(function()
 				return print, "1.1"
@@ -32,12 +34,14 @@ const swan = {}
 		effect(function()
 			return print, "2"
 		end)
-	end)
 
-	root() -- 1.1 1 _1 2
+		print(message)
+	end, "Hello, World!")
+
+	root() -- "Hello, World!" 1.1 1 _1 2 -- effects' disconnection is the last thing to happen, even if they appear before other code within the function
 	```
 ]=]
-function swan.scope(fn: () -> ...unknown): disconnecter
+function swan.scope<T...>(fn: (T...) -> ...unknown, ...: T...): disconnecter
 	const previous_scope = globals.current_scope
 	const disconnecters = {}
 	globals.current_scope = {
@@ -45,7 +49,7 @@ function swan.scope(fn: () -> ...unknown): disconnecter
 		previous = previous_scope,
 	}
 
-	fn()
+	fn(...)
 
 	const function self()
 		for _, disconnecter in disconnecters do
