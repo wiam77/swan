@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Color3 to animatable data types.
 - Usage example for `swan.tween()` in its documentation.
 - Test suite (using [Lest](https://github.com/lest-luau/lest)).
-- `utils.is_computed()` and `utils.is_effect()`.
+- `utils.is_computed()`.
 
 ### Changed
 - Reworked tweening system to use Roblox's TweenService.

@@ -143,23 +143,6 @@ function utils.get_real<T>(proxy: proxy_base<T>): T
 end
 
 --[=[
-	Returns whether the given value is a callback bound to an effect.
-
-	```lua
-	const callback = function() end
-
-	print(swan.utils.is_effect(callback)) -- false
-
-	swan.effect(callback)
-
-	print(swan.utils.is_effect(callback)) -- true
-	```
-]=]
-function utils.is_effect<T>(v: T): boolean
-	return if effects[v] then true else false
-end
-
---[=[
 	Disconnects all the effects from a specific state or in general.
 
 	```lua
