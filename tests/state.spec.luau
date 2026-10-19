@@ -9,7 +9,7 @@ const state = swan.state
 
 describe("state (constructor)", function()
 	it("returns a state", function()
-		expect(state()).toBeTruthy()
+		expect(state(nil)).toBeTruthy()
 	end)
 
 	it("accepts an initial value", function()
