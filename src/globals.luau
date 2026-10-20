@@ -3,6 +3,8 @@
 const swan_types = require("./swan_types")
 
 return {
+	noop = function() end,
+
 	current_tracker = nil :: swan_types.node<swan_types.callback | swan_types.state>?,
 	current_scope = nil :: swan_types.scope_node?,
 
