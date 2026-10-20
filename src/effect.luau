@@ -6,10 +6,16 @@ const swan_types = require("./swan_types")
 type callback<T, U...> = swan_types.callback<T, U...>
 type disconnecter = swan_types.disconnecter
 
+type function not_nil(): type
+	return types.negationof(types.singleton(nil))
+end
+
+const noop = globals.noop
 const effects = globals.effects
-const function noop(): () end
 
 const swan = {}
+
+-- Luau FIXME: callbacks that error still require a subsequent `return` statement.
 
 --[=[
 	@within swan
@@ -38,9 +44,9 @@ const swan = {}
 		print(always_forces(), health.value) -- doesn't track `health`
 	end)
 
-	always_forces("I always force effects") -- "I always force effects"
-	always_forces("I always force effects, again") -- "I always force effects, again"
-	always_forces("I always force effects, again") -- "I always force effects, again"
+	always_forces("I always force effects") -- "I always force effects" 20
+	always_forces("I always force effects, again") -- "I always force effects, again" 20
+	always_forces("I always force effects, again") -- "I always force effects, again" 20
 
 	const kill = swan.effect(function()
 		return print, "Why did you kill me :("
@@ -57,26 +63,28 @@ function swan.effect<T, U...>(callback: callback<T, U...>): disconnecter
 		previous = previous_tracker,
 	}
 
-	const cleanup_data = { callback() }
+	const result = { xpcall<<(any), (any)>>(callback, debug.traceback) }
+	local ok, call_data: any = result[1], result[2]
 	globals.current_tracker = previous_tracker
+
+	if not ok then
+		error(call_data)
+	end
 
 	local function disconnecter()
 		effects[callback] = nil
 		disconnecter = noop
 	end
 
-	if not cleanup_data then
-		return disconnecter
-	end
-
-	const cleanup: any = cleanup_data[1]
-	if not cleanup :: any then
+	if not call_data then
 		return disconnecter
 	end
 
 	local function maid()
 		disconnecter()
-		cleanup(select(2, unpack(cleanup_data)))
+
+		call_data = call_data :: any
+		(call_data :: swan_types.cleanup<any>)(select(3, unpack(result)))
 		maid = noop
 	end
 
