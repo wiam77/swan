@@ -5,6 +5,7 @@ const swan_types = require("./swan_types")
 
 type disconnecter = swan_types.disconnecter
 
+const noop = globals.noop
 const swan = {}
 
 --[=[
@@ -38,7 +39,7 @@ const swan = {}
 		print(message)
 	end, "Hello, World!")
 
-	root() -- "Hello, World!" 1.1 1 _1 2 -- effects' disconnection is the last thing to happen, even if they appear before other code within the function
+root() -- "Hello, World!" 2 _1 1 1.1 -- effects' disconnection is the last thing to happen, even if they appear before other code within the function
 	```
 ]=]
 function swan.scope<T...>(fn: (T...) -> ...unknown, ...: T...): disconnecter
@@ -49,20 +50,28 @@ function swan.scope<T...>(fn: (T...) -> ...unknown, ...: T...): disconnecter
 		previous = previous_scope,
 	}
 
-	fn(...)
-
-	const function self()
-		for _, disconnecter in disconnecters do
-			disconnecter()
-		end
-	end
-
+	const result = { xpcall<<any>>(fn, debug.traceback, ...) }
+	const ok, call_data = result[1], result[2]
 	globals.current_scope = previous_scope
-	if previous_scope then
-		table.insert(previous_scope.data, self)
+
+	if not ok then
+		error(call_data)
 	end
 
-	return self
+	local function disconnecter()
+		for i = #disconnecters, 1, -1 do
+			disconnecters[i]()
+		end
+
+		table.clear(disconnecters)
+		disconnecter = noop
+	end
+
+	if previous_scope then
+		table.insert(previous_scope.data, disconnecter)
+	end
+
+	return disconnecter
 end
 
 return swan.scope

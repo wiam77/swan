@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `state.callbacks` -> `state.subscribers`.
 - Moved `utils.make_proxy()` to the internal `state` module.
 - Made `swan.scope()` pass subsequent arguments into the given function.
+- Made scope disconnecters run in reverse-order and handle errors.
 - License from GPLv3 to MPL-2.0.
 - Split the library across multiple files.
 
