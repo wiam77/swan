@@ -139,7 +139,6 @@ export type proxy_base_hack<T> = setmetatable<{}, {
 --[=[
 	@type proxy typefunction(t: type) -> type
 	@within swan
-	@private
 
 	Type function which recursively creates a proxy out of [`proxy_base`](/api/swan#proxy_base<T>).
 ]=]

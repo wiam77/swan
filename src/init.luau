@@ -13,6 +13,7 @@ const swan_types = require("@self/swan_types")
 --- @class swan
 
 export type state<T = unknown> = swan_types.state<T>
+export type proxy<T> = swan_types.proxy<T>
 export type proxy_state<T> = swan_types.proxy_state<T>
 
 const swan = {
