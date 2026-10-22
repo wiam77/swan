@@ -79,7 +79,7 @@ end
 	```
 ]=]
 function utils.is_computed<T>(v: T): boolean
-	return utils.is_state(v) and ((v :: any) :: swan_types.state<T>).compute ~= nil
+	return utils.is_state(v) and ((v :: any) :: state<T>).compute ~= nil
 end
 
 --[=[
