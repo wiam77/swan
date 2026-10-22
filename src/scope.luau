@@ -39,7 +39,7 @@ const swan = {}
 		print(message)
 	end, "Hello, World!")
 
-root() -- "Hello, World!" 2 _1 1 1.1 -- effects' disconnection is the last thing to happen, even if they appear before other code within the function
+	root() -- "Hello, World!" 2 _1 1 1.1 -- effects' disconnection is the last thing to happen, even if they appear before other code within the function
 	```
 ]=]
 function swan.scope<T...>(fn: (T...) -> ...unknown, ...: T...): disconnecter
