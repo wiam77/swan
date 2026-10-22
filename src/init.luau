@@ -21,6 +21,7 @@ const swan = {
 	proxy = state.proxy,
 
 	effect = require("@self/effect"),
+	map = require("@self/map"),
 	scope = require("@self/scope"),
 	utils = require("@self/utils"),
 }
@@ -32,7 +33,6 @@ end
 const roblox = require("@self/roblox")
 swan.apply = roblox.apply
 swan.create = roblox.create
-swan.component = roblox.component
 swan.tween = roblox.tween
 
 return swan

@@ -1,6 +1,37 @@
 --!strict
 
 --[=[
+	@type indexof typefunction(t: type) -> type
+	@within swan
+	@private
+
+	Returns the union of the given table's indexer and keys.
+]=]
+export type function indexof(t: type)
+	const indexer = t:indexer()
+	local fields = if indexer then indexer.index else types.never
+	for key in t:properties() do
+		fields = types.unionof(fields, key)
+	end
+	return fields
+end
+
+--[=[
+	@type valueof typefunction(t: type) -> type
+	@within swan
+	@private
+
+	Returns the union of the given table's values.
+]=]
+export type function valueof(t: type): type
+	local values = types.unionof()
+	for _, value in t:properties() do
+		values = types.unionof(values, value.read or value.write :: type)
+	end
+	return values
+end
+
+--[=[
 	@type disconnecter () -> ()
 	@within swan
 	@private
