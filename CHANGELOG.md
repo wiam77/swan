@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `swan.apply()`, which substitues `swan.create(Instance)`, for better DX (now, the properties table is correctly typed).
+- `swan.map()`.
 - Color3 to animatable data types.
 - Usage example for `swan.tween()` in its documentation.
 - Test suite (using [Lest](https://github.com/lest-luau/lest)).
@@ -30,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Split the library across multiple files.
 
 ### Removed
-- A bunch of internal types from the external API (now only `state` and `proxy_state` are available).
+- A bunch of internal types from the external API.
 - `swan.wait()`.
 - `utils.state_get_real()`.
 - `utils.branch()`.
