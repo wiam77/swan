@@ -9,11 +9,11 @@
 ]=]
 export type function indexof(t: type)
 	const indexer = t:indexer()
-	local fields = if indexer then indexer.index else types.never
+	local indices = if indexer then indexer.index else types.never
 	for key in t:properties() do
-		fields = types.unionof(fields, key)
+		indices = types.unionof(indices, key)
 	end
-	return fields
+	return indices
 end
 
 --[=[
