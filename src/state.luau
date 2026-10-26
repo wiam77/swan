@@ -1,5 +1,13 @@
 --!strict
 
+--[[
+Luau FIXME:
+	- When creating a state, if its variable type is annotated,
+	and the type of the value passed to swan.state() doesn't match,
+	there should be a type error:
+	const health : swan.state<number> = swan.state("i'm not a number") -- doesn't error
+]]
+
 const globals = require("./globals")
 const swan_types = require("./swan_types")
 const utils = require("./utils")
