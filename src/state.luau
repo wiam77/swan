@@ -21,12 +21,43 @@ const effects = globals.effects
 const batched = globals.batched
 const STATE_MT = globals.STATE_MT
 
+const function trigger_subscribers<T>(state: state<T>)
+	const current_value = state.value
+	const subscribers = state.subscribers
+	for callback, state_i in subscribers do
+		if not effects[callback] then
+			subscribers[callback] = nil
+			continue
+		end
+
+		if not globals.batching then
+			callback(current_value, state_i)
+			continue
+		end
+
+		const state_batch = batched[state]
+		if not state_batch then
+			batched[state] = { { [callback] = true }, current_value, state_i }
+			continue
+		end
+
+		const x = state_batch[1]
+		if not x[callback] then
+			x[callback] = true
+		end
+
+		state_batch[2] = current_value
+	end
+end
+
 const function mark_dirty<T>(state: state<T>)
 	if state.dirty then
 		return
 	end
 
 	state.dirty = true
+	trigger_subscribers(state)
+
 	for dependent in state.dependents do
 		mark_dirty(dependent)
 	end
@@ -113,7 +144,7 @@ function STATE_MT.__call<T>(self: state<T>, ...): T
 		end
 
 		self.dirty = false
-		self(compute())
+		self.value = compute()
 	elseif current_value ~= new_value or (always_force and force ~= false) or force then
 		if utils.is_proxy(current_value) then
 			new_value = make_proxy(new_value, self) :: T
@@ -121,33 +152,10 @@ function STATE_MT.__call<T>(self: state<T>, ...): T
 
 		self.value = new_value :: T
 		for dependent in self.dependents do
-			mark_dirty(self)
+			mark_dirty(dependent)
 		end
 
-		for callback, state_i in subscribers do
-			if not effects[callback] then
-				subscribers[callback] = nil
-				continue
-			end
-
-			if not globals.batching then
-				callback(current_value, state_i)
-				continue
-			end
-
-			const state_batch = batched[self]
-			if not state_batch then
-				batched[self] = { { [callback] = true }, current_value, state_i }
-				continue
-			end
-
-			const x = state_batch[1]
-			if not x[callback] then
-				x[callback] = true
-			end
-
-			state_batch[2] = current_value
-		end
+		trigger_subscribers(self)
 	end
 
 	return self.value :: T
