@@ -176,7 +176,28 @@ end
 	```
 ]=]
 function utils.clear<T>(state: state<T>?): ()
-	table.clear(state and state.subscribers or effects)
+	table.clear(if state then state.subscribers else effects)
+end
+
+--[=[
+	Force triggers the subscribers of the given state.
+
+	```lua
+	const s = swan.state(1)
+
+	swan.effect(function()
+		print(s())
+	end)
+
+	s(1) -- *crickets*
+	utils.trigger(s) -- "1"
+
+	s.value = 2
+	utils.trigger(s) -- "2"
+	```
+]=]
+function utils.trigger<T>(state: state<T>)
+	state(state.value, true)
 end
 
 return utils

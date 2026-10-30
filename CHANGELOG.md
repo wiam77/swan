@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Color3 to animatable data types.
 - Usage example for `swan.tween()` in its documentation.
 - Test suite (using [Lest](https://github.com/lest-luau/lest)).
-- `utils.is_computed()`.
+- `utils.is_computed()` and `utils.trigger()`.
 
 ### Changed
 - Made `swan.create()` use the standard constructor-style syntax for better DX (properties passed as arguments couldn't be typed properly).
