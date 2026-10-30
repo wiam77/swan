@@ -1,13 +1,14 @@
 --!strict
 
 const swan = require("../Packages/swan")
+const center = Vector2.one * 0.5
 
 return function(target: Frame): () -> ()
 	const target_size = swan.state(UDim2.fromScale(0.2, 0.2))
 	const target_color = swan.state(Color3.new())
 
 	const main = swan.create "Frame" {
-		AnchorPoint = Vector2.one * 0.5,
+		AnchorPoint = center,
 		Position = swan.tween(
 			TweenInfo.new(4, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1, true),
 			UDim2.fromScale(0.8, 0.8),
@@ -18,6 +19,22 @@ return function(target: Frame): () -> ()
 		BackgroundColor3 = swan.tween(TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.In), target_color),
 		BorderSizePixel = 0,
 		Parent = target,
+
+		swan.create "TextLabel" {
+			AnchorPoint = center,
+			Position = UDim2.fromScale(0.5, 0.5),
+			Text = swan.computed(function()
+				return tostring(target_color())
+			end),
+			Size = UDim2.fromScale(1, 1),
+			TextScaled = true,
+			Font = Enum.Font.FredokaOne,
+			TextColor3 = swan.computed(function()
+				const target = target_color()
+				return Color3.new(1 - target.R, 1 - target.G, 1 - target.B)
+			end),
+			BackgroundTransparency = 1,
+		},
 	}
 
 	const thread = task.spawn(function()

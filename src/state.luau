@@ -12,17 +12,21 @@ const globals = require("./globals")
 const swan_types = require("./swan_types")
 const utils = require("./utils")
 
+type callback<T = unknown, U... = ()> = swan_types.callback<T, U...>
 type state<T = unknown> = swan_types.state<T>
 type proxy_state<T> = swan_types.proxy_state<T>
 
-const state = {}
-
+const trigger_effect_safe = globals.trigger_effect_safe
 const effects = globals.effects
 const batched = globals.batched
 const STATE_MT = globals.STATE_MT
 
-const function trigger_subscribers<T>(state: state<T>)
-	const current_value = state.value
+const state = {}
+
+local pending_effects: { [callback]: { any } } = {} -- {[callback] : {[1]: old_value, [2]: state_i}}
+local flushing = false
+
+local function schedule_subscribers<T>(state: state<T>, old_value: T?): ()
 	const subscribers = state.subscribers
 	for callback, state_i in subscribers do
 		if not effects[callback] then
@@ -31,13 +35,13 @@ const function trigger_subscribers<T>(state: state<T>)
 		end
 
 		if not globals.batching then
-			callback(current_value, state_i)
+			pending_effects[callback] = { old_value, state_i }
 			continue
 		end
 
 		const state_batch = batched[state]
 		if not state_batch then
-			batched[state] = { { [callback] = true }, current_value, state_i }
+			batched[state] = { { [callback] = true }, old_value, state_i }
 			continue
 		end
 
@@ -46,20 +50,37 @@ const function trigger_subscribers<T>(state: state<T>)
 			x[callback] = true
 		end
 
-		state_batch[2] = current_value
+		state_batch[2] = old_value
 	end
 end
 
-const function mark_dirty<T>(state: state<T>)
-	if state.dirty then
+local function flush_effects(): ()
+	if flushing then
 		return
 	end
 
-	state.dirty = true
-	trigger_subscribers(state)
+	flushing = true
 
+	local current_pending_effects = pending_effects
+	pending_effects = {}
+
+	for callback, data in current_pending_effects do
+		trigger_effect_safe(callback, data[1], data[2])
+	end
+
+	flushing = false
+end
+
+function mark_dependents_dirty<T>(state: state<T>): ()
 	for dependent in state.dependents do
-		mark_dirty(dependent)
+		if dependent.dirty then
+			continue
+		end
+
+		dependent.dirty = true
+
+		schedule_subscribers(dependent, dependent.value)
+		mark_dependents_dirty(dependent)
 	end
 end
 
@@ -68,11 +89,10 @@ const function deep_clone<K, V>(t: { [K]: V }): { [K]: V }
 		return t
 	end
 
-	const clone: any = {}
-	for k, v: any in t do
+	const clone = {}
+	for k, v in t do
 		clone[k] = deep_clone(v)
 	end
-
 	return clone
 end
 
@@ -104,7 +124,7 @@ const function make_proxy(real: any, state: state, root_old: any, self_old: any)
 			real[k] = v
 
 			for callback, state_i in subscribers do
-				(callback)(root_old, state_i)
+				trigger_effect_safe(callback, root_old, state_i)
 			end
 
 			self_old[k] = v
@@ -143,28 +163,50 @@ function STATE_MT.__call<T>(self: state<T>, ...): T
 			return current_value
 		end
 
-		self.dirty = false
-		self.value = compute()
+		const previous_tracker = globals.current_tracker
+		globals.current_tracker = {
+			data = self,
+			previous = previous_tracker,
+		}
+
+		self.dirty = nil
+		self.recomputing = true
+
+		const ok, result = xpcall<<any>>(compute, debug.traceback)
+		if not ok then
+			self.dirty = true
+			self.recomputing = nil
+			globals.current_tracker = previous_tracker
+			error(result)
+		end
+
+		globals.current_tracker = nil
+
+		self(result)
+		self.recomputing = nil
+		globals.current_tracker = previous_tracker
 	elseif current_value ~= new_value or (always_force and force ~= false) or force then
 		if utils.is_proxy(current_value) then
-			new_value = make_proxy(new_value, self) :: T
+			new_value = make_proxy(new_value, self)
 		end
 
 		self.value = new_value :: T
-		for dependent in self.dependents do
-			mark_dirty(dependent)
+		mark_dependents_dirty(self)
+
+		if not self.recomputing then
+			schedule_subscribers(self, current_value)
 		end
 
-		trigger_subscribers(self)
+		flush_effects()
 	end
 
-	return self.value :: T
+	return self.value
 end
 
 function STATE_MT.__unm(v: state<number>): state<number>
-	return (state.computed(function()
+	return state.computed(function()
 		return -v()
-	end))
+	end)
 end
 
 for op_name, op in globals.BINARY_OPS do
@@ -203,7 +245,7 @@ end
 	print(ammo(), message.value) -- 100, "Hello, World!"
 	```
 ]=]
-function state.state<T>(initial_value: T, always_force: boolean?): state<T>
+function state.state<T>(initial_value: T, always_force: true?): state<T>
 	return setmetatable({
 		value = initial_value,
 		always_force = always_force,
@@ -247,8 +289,14 @@ function state.computed<T>(fn: (() -> T) | (() -> ())): state<T>
 		previous = previous_tracker,
 	}
 
-	self.value = fn()
+	const ok, result = xpcall<<any>>(fn, debug.traceback)
 	globals.current_tracker = previous_tracker
+
+	if not ok then
+		error(result)
+	end
+
+	self.value = result
 	return self
 end
 

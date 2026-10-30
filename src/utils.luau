@@ -10,6 +10,7 @@ type proxy_base<T> = swan_types.proxy_base_hack<T>
 
 const utils = {}
 
+const trigger_effect_safe = globals.trigger_effect_safe
 const effects = globals.effects
 const batched = globals.batched
 
@@ -37,11 +38,16 @@ const batched = globals.batched
 ]=]
 function utils.batch(fn: () -> ...unknown): ()
 	globals.batching = true
-	fn()
+	const ok, message = pcall(fn)
+	if not ok then
+		globals.batching = false
+		table.clear(batched)
+		error(message)
+	end
 
 	for _, result in batched do
 		for callback in result[1] :: { [swan_types.callback]: true } do
-			callback(result[2], result[3] :: number)
+			trigger_effect_safe(callback, result[2], result[3])
 		end
 	end
 

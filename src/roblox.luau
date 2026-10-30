@@ -8,7 +8,9 @@ const state = require("./state")
 const swan_types = require("./swan_types")
 const utils = require("./utils")
 
-type state<T = unknown> = swan_types.state<T>
+type state<T> = swan_types.state<T>
+type proxy_state<T> = swan_types.proxy_state<T>
+type dynamic_children = swan_types.proxy<swan_types.dynamic_children_base>
 
 type class_name = swan_types.class_name
 type properties<T> = swan_types.properties<T>
@@ -26,88 +28,100 @@ type on_complete = swan_types.on_complete
 const roblox = {}
 const constructor_cache: { [class_name]: constructor } = {}
 
-const function implicit_effect(instance: Instance, value: any, action: (...any) -> ()): any
-	if not utils.is_state(value) then
-		return action(value)
-	end
-
-	return effect(function(old)
-		action(value(), old)
-	end)
-end
-
-const function apply<T>(instance: T & Instance, properties: properties<T>): T
-	const nested_props = {}
-	for property_name, value in properties :: any do
-		if property_name == "Children" then
-			implicit_effect(instance, value, function(value: any, old)
-				value = utils.is_proxy(value) and utils.get_real(value) or value
-
+const function apply_internal<T>(instance: T & Instance, properties: properties<T>): T
+	const nested_properties = {}
+	for property_key, property_value in properties :: any do
+		const is_number = type(property_key) == "number"
+		if is_number and utils.is_proxy_state(property_value) then
+			effect(function(old: dynamic_children?)
+				const children: dynamic_children = utils.get_real(property_value())
 				if not old then
-					for child_name, child in value do
+					for child_name, child in children do
+						const child_type = typeof(child)
+						assert(child_type == "Instance", `Expected proxy to contain only Instances, got {child_type}!`)
+
 						if child.Name == child.ClassName then
-							child.Name = child_name
+							child.Name = child_name :: string
 						end
 						child.Parent = instance
 					end
+
 					return
 				end
 
 				for child_name, child in old do
-					if value[child_name] == child then
+					if children[child_name] == child then
 						continue
 					end
-					child:Destroy()
+
+					child.Parent = nil
 				end
 
-				for child_name, child in value do
+				for child_name, child in children do
 					if old[child_name] == child then
 						continue
 					end
+
 					if child.Name == child.ClassName then
-						child.Name = child_name
+						child.Name = child_name :: string
 					end
 					child.Parent = instance
 				end
 			end)
-
 			continue
 		end
 
-		if type(property_name) == "number" then
-			const value_t = type(value)
-			assert(value_t == "table", `Expected a table (properties) for index {property_name}, got a "{value_t}!"`)
-			table.insert(nested_props, value)
+		const property_type = typeof(property_value)
+		if is_number and property_type == "table" then
+			table.insert(nested_properties, property_value)
+			continue
+		end
+
+		if is_number and property_type == "Instance" then
+			property_value.Parent = instance
+			continue
+		end
+
+		if is_number then
+			effect(function(old, index)
+				property_value(instance, old, index)
+			end)
 			continue
 		end
 
 		instance = instance :: any
 
-		const exists, property = pcall(function()
-			return instance[property_name]
-		end)
-
-		assert(exists, `Property '{property_name}' doesn't exist for class '{instance.ClassName}!'`)
-
+		const instance_property = instance[property_key]
 		const success, is_event = pcall(function()
-			return property and property.Connect
+			return instance_property and instance_property.Connect
 		end)
 
 		if success and is_event then
-			implicit_effect(instance, value, function(value)
-				property:Connect(value)
+			instance_property:Connect(function(...)
+				property_value(instance, ...)
 			end)
 			continue
 		end
 
-		implicit_effect(instance, value, function(value)
-			instance[property_name] = value
+		if not utils.is_state(property_value) then
+			instance[property_key] = property_value
+			continue
+		end
+
+		effect(function()
+			instance[property_key] = property_value()
 		end)
 	end
 
-	for _, v in nested_props do
-		apply<<T>>(instance, v :: any)
+	for _, properties: properties<T> in nested_properties do
+		apply_internal<<T>>(instance, properties)
 	end
+
+	return instance
+end
+
+const function apply<T>(instance: T & Instance, properties: properties<T>): T
+	instance.Destroying:Connect(scope(apply_internal, instance, properties))
 	return instance
 end
 
@@ -136,26 +150,32 @@ end
 	@param class_name T | class_name -- The class name of the Instance you want to create.
 	@return class_constructor<T>
 
+	:::info
+	The type of the passed properties to the constructor is not validated at runtime
+	since that should already happen at edit time through types.
+	:::
+
 	```lua
 	const bullets = state(100)
-	const main_frame = create("Frame", {
+	const main_frame = create "Frame" {
 		BackgroundColor3 = Color3.new(),
 		Size = UDim2.fromScale(1, 1),
-		Children = {
-			create("UIGridLayout", {
-				CellSize = UDim2.fromOffset(100, 100)
-			}),
-			bullets_label = create("TextLabel", {
-				Text = "Bullets: "..bullets :: string
-			}),
-			shoot_button = create("TextButton", {
-				Text = "Shoot",
-				MouseButton1Down = function()
-					bullets(bullets.value - 1)
-				end
-			})
+
+		create "UIGridLayout" {
+			CellSize = UDim2.fromOffset(100, 100)
+		},
+
+		create "TextLabel" {
+			Text = "Bullets: "..bullets
+		},
+
+		create "TextButton" {
+			Text = "Shoot",
+			MouseButton1Down = function()
+				bullets(bullets.value - 1)
+			end
 		}
-	})
+	}
 	```
 ]=]
 function roblox.create<T>(class_name: T | class_name): class_constructor<T>
@@ -166,62 +186,11 @@ function roblox.create<T>(class_name: T | class_name): class_constructor<T>
 
 	const instance = Instance.new(class_name)
 	constructor = function(properties: properties<T>)
-		return apply<<T>>(instance, properties)
+		return apply<<T>>(instance:Clone(), properties)
 	end
 
 	constructor_cache[class_name] = constructor :: constructor
 	return constructor
-end
-
---[=[
-	@within swan
-	@tag roblox
-
-	Wraps a function, which returns an Instance, into a scope, so that when the
-	Instance is destroyed, the scope is disconnected.\
-	Returns the wrapped function.
-
-	```lua
-	const item = component(function(name: string)
-		const equipped = state(false)
-		const self: TextButton = create("TextButton", {
-			Text = name,
-
-			MouseButton1Click = function()
-				equipped(not equipped.value)
-			end,
-		})
-
-		swan.effect(function()
-			self.Text = equipped() and "Equipped!" or "Unequipped!"
-
-			task.wait(1)
-			self.Text = name
-
-			return print, `The item "{name}" was destroyed.`
-		end)
-
-		return self
-	end)
-
-	const ak47 = item "ak47"
-	ak47:Destroy() -- "The item "ak47" was destroyed."
-	```
-
-	@param fn (U...) -> T & Instance
-	@return (U...) -> T
-]=]
-function roblox.component<T, U...>(fn: (U...) -> T & Instance): (U...) -> T
-	return function(...: U...): T
-		const args: { any } = { ... }
-		local instance: Instance
-		const disconnecter = scope(function()
-			instance = fn(table.unpack(args))
-		end)
-
-		instance.Destroying:Connect(disconnecter)
-		return instance :: T
-	end
 end
 
 const convert_vectors: { [convert_vector_name]: true } = {

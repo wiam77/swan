@@ -1,5 +1,11 @@
 --!strict
 
+type Instance_ = Instance
+
+type function get_value(v: { read: type?, write: type? }): type
+	return v.read or v.write :: type
+end
+
 --[=[
 	@type indexof typefunction(t: type) -> type
 	@within swan
@@ -26,7 +32,7 @@ end
 export type function valueof(t: type): type
 	local values = types.unionof()
 	for _, value in t:properties() do
-		values = types.unionof(values, value.read or value.write :: type)
+		values = types.unionof(values, get_value(value))
 	end
 	return values
 end
@@ -49,6 +55,11 @@ export type disconnecter = () -> ()
 ]=]
 export type cleanup<T...> = (T...) -> ...unknown
 
+type instance_callback<I, T = any, U... = ()> =
+	((self: I, old_value: T?, state_i: number?) -> (cleanup<U...>, U...))
+	| ((self: I, old_value: T?, state_i: number?) -> ())
+	| ((self: I, old_value: T?, state_i: number?) -> false?)
+
 --[=[
 	@type callback<T=unknown,U...=()> ((old_value: T?, state_i: number?) -> (cleanup<U...>, U...)) | ((old_value: T?, state_i: number?) -> ()) | ((old_value: T?, state_i: number?) -> nil)
 	@within swan
@@ -62,16 +73,17 @@ export type callback<T = unknown, U... = ()> =
 	| ((old_value: T?, state_i: number?) -> false?)
 
 --[=[
-	@type state<T=unknown> setmetatable<{ value: T, always_force: boolean?, dirty: boolean, compute: ((() -> T) | (() -> ()))?, read subscribers: { [callback<T>]: number }, read dependents: { [state]: true } }, { __call: ((self: state<T>) -> T) & ((self: state<T>, new_value: T, force: boolean?) -> T), __unm: (state<T>) -> state<T>, __concat: (state_or_concatenable<T>, state_or_concatenable<T>) -> state<T>, __add: (state_or_number<T>, state_or_number<T>) -> state<T>, __sub: (state_or_number<T>, state_or_number<T>) -> state<T>, __mul: (state_or_number<T>, state_or_number<T>) -> state<T>, __div: (state_or_number<T>, state_or_number<T>) -> state<T>, __idiv: (state_or_number<T>, state_or_number<T>) -> state<T>, __mod: (state_or_number<T>, state_or_number<T>) -> state<T>, __pow: (state_or_number<T>, state_or_number<T>) -> state<T>>
+	@type state<T=unknown> setmetatable<{ value: T, always_force: true?, dirty: boolean, compute: ((() -> T) | (() -> ()))?, read subscribers: { [callback<T>]: number }, read dependents: { [state]: true } }, { __call: ((self: state<T>) -> T) & ((self: state<T>, new_value: T, force: boolean?) -> T), __unm: (state<T>) -> state<T>, __concat: (state_or_concatenable<T>, state_or_concatenable<T>) -> state<T>, __add: (state_or_number<T>, state_or_number<T>) -> state<T>, __sub: (state_or_number<T>, state_or_number<T>) -> state<T>, __mul: (state_or_number<T>, state_or_number<T>) -> state<T>, __div: (state_or_number<T>, state_or_number<T>) -> state<T>, __idiv: (state_or_number<T>, state_or_number<T>) -> state<T>, __mod: (state_or_number<T>, state_or_number<T>) -> state<T>, __pow: (state_or_number<T>, state_or_number<T>) -> state<T>>
 	@within swan
 
 	The [state](/docs/concepts#state) type.
 ]=]
 export type state<T = unknown> = setmetatable<{
 	value: T,
-	always_force: boolean?,
-	dirty: boolean,
-	compute: ((() -> T) | (() -> ()))?,
+	always_force: true?,
+	dirty: true?,
+	recomputing: true?,
+	read compute: ((() -> T) | (() -> ()))?,
 
 	read subscribers: { [callback<T>]: number },
 	read dependents: { [state]: true },
@@ -102,17 +114,9 @@ export type state<T = unknown> = setmetatable<{
 
 -- Used by `properties` because the normal `state` is way too complex to typecheck.
 -- Luau FIXME: remove the need for this
-type simple_state<T = unknown> = setmetatable<{
+type simple_state<T = unknown> = {
 	value: T,
-	always_force: boolean?,
-	dirty: boolean,
-	compute: ((() -> T) | (() -> ()))?,
-
-	read subscribers: { [callback<T>]: number },
-	read dependents: { [simple_state]: true },
-}, {
-	__call: (self: simple_state<T>, new_value: T?, force: boolean?) -> T,
-}>
+}
 
 --[=[
 	@type proxy_base<T> setmetatable<T, {[SWAN_PROXY_ID] : true, [SWAN_REAL_ID] : T, __index : T, __newindex : ({}, any, any) -> ()}>
@@ -144,8 +148,8 @@ export type proxy_base_hack<T> = setmetatable<{}, {
 ]=]
 export type function proxy(t: type): type
 	for k, v in t:properties() do
-		const value = v.read :: type
-		if (value):is("table") then
+		const value = get_value(v)
+		if value:is("table") then
 			t:setproperty(k, proxy(value))
 		end
 	end
@@ -198,7 +202,6 @@ export type instances = {
 	Frame: Frame,
 	ImageButton: ImageButton,
 	TextButton: TextButton,
-	GuiLabel: GuiLabel,
 	ImageLabel: ImageLabel,
 	TextLabel: TextLabel,
 	ScrollingFrame: ScrollingFrame,
@@ -223,10 +226,8 @@ export type instances = {
 ]=]
 export type class_name = keyof<instances>
 
--- For some reason this doesn't work with a normal type (simple_state<T> resolves to simple_state<unknown>)
-type function implicit_property(callback: type?, property: type): type
-	return types.optional(callback or types.unionof(property, simple_state(property)))
-end
+export type dynamic_children_base = { [number | string]: Instance }
+export type dynamic_children = proxy_state<dynamic_children_base>
 
 -- FIXME: Roblox's LSP emits the "code too complex to typecheck"
 -- error when trying to evaluate this type
@@ -240,37 +241,62 @@ end
 	Type function which takes an Instance type and returns a properties table for said Instance.
 
 	Depending on the key, the properties table has the following behaviour:
-	- **Property**: either provide the value directly or a state holding it.\
-	If you do the latter, `swan` will implicitly create an effect which updates the property for you.
-	- **Event**: give a callback function which will be automatically connected to the Event and have its arguments passed.
-	- **"Children"**: either a table, where the values are Instances and the keys are names for said Instances,
-	if their name is unset (Name = ClassName); or a state containing said table.
-	If it's the latter, `swan` will implicitly create an effect which automatically destroys/parents Instances
-	that were removed/added to the table.
-	- **number**: a nested Properties table, useful for [components](/api/swan#component).
+	- **Property**: either a "raw" value or a state holding it.\
+	For the latter, an effect which updates the property for you will be implicitly created.
+	- **Event**: callback function which will be connected to the Event and have its arguments passed.\
+	The first argument is always the instance itself.
+	- **number**:
+	  - A nested Properties table, useful for components (functions that return instances based on some arguments).
+	  Nested properties are applied first.
+	  - A child instance.
+	  - A proxy state containing a dictionary of Instances.\
+	  The contents of the table is always reflected in the instance hierarchy, meaning that
+	  added instances will be parented to the created instance, while removed ones will be unparented.\
+	  The key of each Instance will be their name if none is set (Name = ClassName).
+	  - A function which will get wrapped in an effect. The first argument passed is the instance being created.
 ]=]
 export type function properties(instance: type): type
 	const tag = instance.tag
 	assert(tag == "extern", `Expected type to be extern (Instance), got {tag}!`)
 
+	const original_instance = instance
 	const self = types.newtable()
-	self:setindexer(types.number, self)
+	self:setindexer(
+		types.number,
+		types.unionof(
+			self,
+			Instance_,
+			-- Gotta inline dynamic_children because for some reason it doesn't work if directly referenced.
+			state(proxy(dynamic_children_base)), -- Luau FIXME: don't allow non-Instance proxy states such as `swan.proxy<<{ string }>> {}`.
+			instance_callback(instance) -- Luau FIXME: these parameters should not be `unknown`.
+		)
+	)
 
 	while instance do
 		for property_key, p in instance:properties() do
-			const property = p.read or p.write :: type
+			const property = get_value(p)
 			const property_type = property.tag
-			if property_type == "function" then
+			if property_type == "function" or property_type == "intersection" then
 				continue
 			end
 
-			local callback: type?
+			local callback_head: { type }?
 			const connector = property_type == "table" and property:readproperty(types.singleton("Connect"))
 			if connector then
-				callback = (connector:parameters().head :: { type })[2]
+				callback_head = {
+					original_instance,
+					select(1, table.unpack((connector:parameters().head :: { type } or {})[2]:parameters().head or {})),
+				}
 			end
 
-			self:setproperty(property_key, implicit_property(callback, property))
+			self:setproperty(
+				property_key,
+				types.optional(
+					if callback_head
+						then types.newfunction({ head = callback_head })
+						else types.unionof(property, simple_state(property))
+				)
+			)
 		end
 
 		instance = instance:readparent() :: type

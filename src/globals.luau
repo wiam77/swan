@@ -2,16 +2,31 @@
 
 const swan_types = require("./swan_types")
 
+type callback<T = unknown, U... = ()> = swan_types.callback<T, U...>
+type state<T = unknown> = swan_types.state<T>
+
+const warn = warn or function<T...>(...: T...): ()
+	print(`[WARN]`)
+	print(...)
+end
+
+const function effect_error(message: string): ()
+	warn("Effect error:", message)
+end
+
 return {
 	noop = function() end,
+	trigger_effect_safe = function<T, U...>(callback: callback<T, U...>, old_value: T?, state_i: number)
+		xpcall<<(T, number), (any)>>(callback, effect_error, old_value, state_i)
+	end,
 
-	current_tracker = nil :: swan_types.node<swan_types.callback | swan_types.state>?,
+	current_tracker = nil :: swan_types.node<callback | state>?,
 	current_scope = nil :: swan_types.scope_node?,
 
-	effects = {} :: { [swan_types.callback]: number },
+	effects = {} :: { [callback]: number },
 
 	batching = false :: boolean,
-	batched = {} :: { [swan_types.state]: { any } }, -- {[state] : {[1] : {[callback] = true}, [2] : old_value, [3] : state_i}}
+	batched = {} :: { [state]: { any } }, -- {[state] : {[1] : {[callback] = true}, [2] : old_value, [3] : state_i}}
 
 	STATE_MT = {} :: { [string]: any },
 

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `swan.apply()`, which substitues `swan.create(Instance)`, for better DX (now, the properties table is correctly typed).
+- `properties[number] = callback`, which get wrapped by an effect, collected by a scope tied to the instance being created.
 - `swan.map()`.
 - Color3 to animatable data types.
 - Usage example for `swan.tween()` in its documentation.
@@ -14,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `utils.is_computed()`.
 
 ### Changed
+- Made `swan.create()` use the standard constructor-style syntax for better DX (properties passed as arguments couldn't be typed properly).
+- `properties.Children = {Instance}` in favor of `properties[number] = Instance` and `properties[number] = proxy_state<{[number | string]: Instance}>`.
 - Reworked tweening system to use Roblox's TweenService.
 - Made `swan.tween()` accept an initial_value.
 - Made `swan.tween()` accept a raw target value (as in, not a state), for "one-shot" tweens.
@@ -32,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - A bunch of internal types from the external API.
+- `swan.component()`.
 - `swan.wait()`.
 - `utils.state_get_real()`.
 - `utils.branch()`.

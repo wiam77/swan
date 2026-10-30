@@ -2,12 +2,13 @@
 sidebar_position: 2
 ---
 
-# Concepts
+# Overview
 ## States
 A state is the unit of reactivity wrapping a value. Internally it's an object with the fields:
 - **.value:** The state's current value. Read and write this if you don't intend to track this state or trigger effects.
 - **.always_force:** Whether every write operation for this state is automatically forced.
 - **.dirty:** Boolean which indicates whether or not a computed that depends on this state should re-compute.
+- **.recomputing:** Self-explanatory; used internally to avoid effects subscribed to computed states from running twice.
 - **.compute:** Function whose return value is bound to a computed state.
 - **.subscribers:** Set of functions bound to this state (effects).
 - **.dependents:** Set of states depending on this one.
@@ -34,7 +35,7 @@ ammo(10)
 print(ammo_ui()) -- "Ammo: 10"
 
 local xp = swan.state(300)
-local bars = xp / 10 :: any
+local bars = xp / 10
 
 print(bars()) -- 30
 xp(500)

@@ -50,15 +50,15 @@ function swan.map<P, UV, PT, U>(
 	const self_proxy: any = self()
 
 	effect(function(old: any)
-		const p: any = utils.get_real((source :: proxy_state<PT>)())
+		const source_real: any = utils.get_real((source :: proxy_state<PT>)())
 		if not old then
-			for k, v in p do
+			for k, v in source_real do
 				self_proxy[k] = (fn :: any)(k, v)
 			end
 			return
 		end
 
-		for k, v in p do
+		for k, v in source_real do
 			if old[k] ~= v then
 				self_proxy[k] = (fn :: any)(k, v)
 			end
