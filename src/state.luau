@@ -26,7 +26,7 @@ const state = {}
 local pending_effects: { [callback]: { any } } = {} -- {[callback] : {[1]: old_value, [2]: state_i}}
 local flushing = false
 
-local function schedule_subscribers<T>(state: state<T>, old_value: T?): ()
+const function schedule_subscribers<T>(state: state<T>, old_value: T?): ()
 	const subscribers = state.subscribers
 	for callback, state_i in subscribers do
 		if not effects[callback] then
@@ -54,14 +54,14 @@ local function schedule_subscribers<T>(state: state<T>, old_value: T?): ()
 	end
 end
 
-local function flush_effects(): ()
+const function flush_effects(): ()
 	if flushing then
 		return
 	end
 
 	flushing = true
 
-	local current_pending_effects = pending_effects
+	const current_pending_effects = pending_effects
 	pending_effects = {}
 
 	for callback, data in current_pending_effects do

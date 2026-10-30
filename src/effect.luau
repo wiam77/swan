@@ -64,7 +64,7 @@ function swan.effect<T, U...>(callback: callback<T, U...>): disconnecter
 	}
 
 	const result = { xpcall<<(any), (any)>>(callback, debug.traceback) }
-	local ok, call_data: any = result[1], result[2]
+	const ok, call_data: any = result[1], result[2]
 	globals.current_tracker = previous_tracker
 
 	if not ok then
@@ -81,9 +81,7 @@ function swan.effect<T, U...>(callback: callback<T, U...>): disconnecter
 	end
 
 	local function maid()
-		disconnecter()
-
-		call_data = call_data :: any
+		disconnecter();
 		(call_data :: swan_types.cleanup<any>)(select(3, unpack(result)))
 		maid = noop
 	end

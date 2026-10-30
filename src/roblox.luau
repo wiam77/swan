@@ -212,7 +212,7 @@ const type_to_value_instance: { [swan_types.animatable_name]: string } = {
 	CFrame = "CFrameValue",
 }
 
-local function convert_vector3(
+const function convert_vector3(
 	vector: Vector3,
 	to: convert_vector_name
 ): Color3 | vector | Vector2 | Vector2int16 | Vector3int16
@@ -224,7 +224,7 @@ local function convert_vector3(
 			else if to == "Vector3int16" then Vector3int16.new(x, y, z) else nil :: never
 end
 
-local function play_tween(goal: animatable, info: TweenInfo, on_complete: on_complete?, self: state<animatable>): Tween
+const function play_tween(goal: animatable, info: TweenInfo, on_complete: on_complete?, self: state<animatable>): Tween
 	const goal_type = typeof(goal) :: animatable_name
 	const instance: any = Instance.new(type_to_value_instance[goal_type])
 	const property = if goal_type == "UDim" then "PaddingTop" else if goal_type == "UDim2" then "Size" else "Value"
