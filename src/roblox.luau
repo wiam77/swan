@@ -28,42 +28,52 @@ type on_complete = swan_types.on_complete
 const roblox = {}
 const constructor_cache: { [class_name]: constructor } = {}
 
+const function assert_instance<T>(v: T): ()
+	const child_type = typeof(v)
+	assert(child_type == "Instance", `Expected proxy to contain only Instances, got {child_type}!`)
+end
+
 const function apply_internal<T>(instance: T & Instance, properties: properties<T>): T
 	const nested_properties = {}
 	for property_key, property_value in properties :: any do
 		const is_number = type(property_key) == "number"
 		if is_number and utils.is_proxy_state(property_value) then
-			effect(function(old: dynamic_children?)
+			effect(function(old_children: dynamic_children?)
 				const children: dynamic_children = utils.get_real(property_value())
-				if not old then
+				if not old_children then
 					for child_name, child in children do
-						const child_type = typeof(child)
-						assert(child_type == "Instance", `Expected proxy to contain only Instances, got {child_type}!`)
+						assert_instance(child)
 
 						if child.Name == child.ClassName then
-							child.Name = child_name :: string
+							const name_string = tostring(child_name)
+							if name_string then
+								child.Name = name_string
+							end
 						end
 						child.Parent = instance
 					end
-
 					return
 				end
 
-				for child_name, child in old do
+				for child_name, child in old_children do
+					assert_instance(child)
 					if children[child_name] == child then
 						continue
 					end
 
-					child.Parent = nil
+					child:Destroy()
 				end
 
 				for child_name, child in children do
-					if old[child_name] == child then
+					if old_children[child_name] == child then
 						continue
 					end
 
 					if child.Name == child.ClassName then
-						child.Name = child_name :: string
+						const name_string = tostring(child_name)
+						if name_string then
+							child.Name = name_string
+						end
 					end
 					child.Parent = instance
 				end

@@ -226,7 +226,7 @@ export type instances = {
 ]=]
 export type class_name = keyof<instances>
 
-export type dynamic_children_base = { [number | string]: Instance }
+export type dynamic_children_base = { [any]: Instance }
 export type dynamic_children = proxy_state<dynamic_children_base>
 
 -- FIXME: Roblox's LSP emits the "code too complex to typecheck"
@@ -251,8 +251,8 @@ export type dynamic_children = proxy_state<dynamic_children_base>
 	  - A child instance.
 	  - A proxy state containing a dictionary of Instances.\
 	  The contents of the table is always reflected in the instance hierarchy, meaning that
-	  added instances will be parented to the created instance, while removed ones will be unparented.\
-	  The key of each Instance will be their name if none is set (Name = ClassName).
+	  added instances will be parented to the created instance, while removed ones will be Destroyed.\
+	  The key of each Instance will be their name if none is set (Name = ClassName) and if the key is a string or a number.
 	  - A function which will get wrapped in an effect. The first argument passed is the instance being created.
 ]=]
 export type function properties(instance: type): type
