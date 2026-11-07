@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `swan.apply()`, which substitues `swan.create(Instance)`, for better DX (now, the properties table is correctly typed).
 - `properties[number] = callback`, which get wrapped by an effect, collected by a scope tied to the instance being created.
-- `swan.map()`.
+- `swan.map()`, `swan.keys()` and `swan.values()`.
 - Color3 to animatable data types.
 - Usage example for `swan.tween()` in its documentation.
 - Test suite (using [Lest](https://github.com/lest-luau/lest)).
