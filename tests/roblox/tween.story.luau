@@ -28,7 +28,7 @@ return function(target: Frame): () -> ()
 			end),
 			Size = UDim2.fromScale(1, 1),
 			TextScaled = true,
-			Font = Enum.Font.FredokaOne,
+			Font = Enum.Font.Ubuntu,
 			TextColor3 = swan.computed(function()
 				const target = target_color()
 				return Color3.new(1 - target.R, 1 - target.G, 1 - target.B)

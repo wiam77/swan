@@ -1,5 +1,6 @@
 --!strict
 
+const dynamic = require("@self/dynamic")
 const state = require("@self/state")
 const swan_types = require("@self/swan_types")
 
@@ -15,8 +16,12 @@ const swan = {
 	proxy = state.proxy,
 
 	effect = require("@self/effect"),
-	map = require("@self/map"),
 	scope = require("@self/scope"),
+
+	map = dynamic.map,
+	keys = dynamic.keys,
+	values = dynamic.values,
+
 	utils = require("@self/utils"),
 }
 
