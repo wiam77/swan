@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make binary implicit computeds support both operands as states.
 - `swan.state` now provides types (with some limitations) for implicit computeds.
 - `swan.proxy_state()` -> `swan.proxy()`.
+- Made state proxy indexing track (effects and computeds).
 - `state.callbacks` -> `state.subscribers`.
 - Moved `utils.make_proxy()` to the internal `state` module.
 - Made `swan.scope()` pass subsequent arguments into the given function.

@@ -96,6 +96,41 @@ const function deep_clone<K, V>(t: { [K]: V }): { [K]: V }
 	return clone
 end
 
+const function track_state(state: state): ()
+	const subscribers = state.subscribers
+	const current_tracker = globals.current_tracker
+	if not current_tracker then
+		return
+	end
+
+	const data: any = current_tracker.data
+	const is_effect = type(data) == "function"
+	-- if is_effect and not subscribers[data] then
+	-- 	effects[data] += 1
+	-- 	subscribers[data] = effects[data]
+	-- elseif not is_effect then
+	-- 	const dependents = state.dependents
+	-- 	if not dependents[data] then
+	-- 		dependents[data] = true
+	-- 	end
+	-- end
+
+	if is_effect and not subscribers[data] then
+		effects[data] += 1
+		subscribers[data] = effects[data]
+		return
+	end
+
+	if is_effect then
+		return
+	end
+
+	const dependents = state.dependents
+	if not dependents[data] then
+		dependents[data] = true
+	end
+end
+
 const function make_proxy(real: any, state: state, root_old: any, self_old: any): ...unknown
 	if type(real) ~= "table" or utils.is_proxy(real) then
 		return real
@@ -115,7 +150,10 @@ const function make_proxy(real: any, state: state, root_old: any, self_old: any)
 	return setmetatable({}, {
 		[globals.SWAN_PROXY_ID] = true,
 		[globals.SWAN_REAL_ID] = real,
-		__index = proxified,
+		__index = function(_, k)
+			track_state(state)
+			return proxified[k]
+		end,
 		__newindex = function(_, k, v)
 			if proxified[k] == v and not state.always_force then
 				return
@@ -133,30 +171,15 @@ const function make_proxy(real: any, state: state, root_old: any, self_old: any)
 end
 
 function STATE_MT.__call<T>(self: state<T>, ...): T
-	const current_value = self.value
-	const subscribers = self.subscribers
-
 	const args = { ... }
 	const args_n = select("#", ...)
 	local new_value: T? = args[1]
 	const force: boolean? = args[2]
 	const always_force = self.always_force
+	const current_value = self.value
 
 	if args_n == 0 then
-		const current_tracker = globals.current_tracker
-		if current_tracker then
-			const data: any = current_tracker.data
-			const is_effect = type(data) == "function"
-			if is_effect and not subscribers[data] then
-				effects[data] += 1
-				subscribers[data] = effects[data]
-			elseif not is_effect then
-				const dependents = self.dependents
-				if not dependents[data] then
-					dependents[data] = true
-				end
-			end
-		end
+		track_state(self)
 
 		const compute = self.compute
 		if not (compute and self.dirty) then
